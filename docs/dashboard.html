@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌞 Global Solar Profiles</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg:       #0a0a0f;
+    --surface:  #12121a;
+    --border:   #1e1e2e;
+    --solar:    #f5a623;
+    --solar2:   #ff6b35;
+    --accent:   #00d4aa;
+    --dim:      #4a4a6a;
+    --text:     #e8e8f0;
+    --muted:    #7070a0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(245,166,35,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(0,212,170,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 80%, rgba(245,166,35,0.15) 0%, transparent 100%),
+      radial-gradient(600px 600px at 70% 50%, rgba(245,166,35,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    padding: 2.5rem 0 3rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+  .logo {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--solar) 0%, var(--solar2) 60%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo span { display: block; font-size: 0.85rem; font-weight: 400; letter-spacing: 0.15em; color: var(--muted); margin-top: 0.3rem; -webkit-text-fill-color: var(--muted); }
+  .subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 380px;
+    margin-left: auto;
+  }
+  .tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    align-items: end;
+  }
+  label { display: block; font-size: 0.7rem; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.4rem; }
+  select, input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.65rem 0.9rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  select:focus, input:focus { border-color: var(--solar); }
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-right: 2.5rem; }
+  .search-icon { position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 0.9rem; pointer-events: none; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    padding: 1.1rem 1.2rem;
+    transition: background 0.2s;
+  }
+  .stat:hover { background: #16162a; }
+  .stat-label { font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.35rem; text-transform: uppercase; }
+  .stat-value { font-size: 1.55rem; font-weight: 800; line-height: 1; }
+  .stat-value.solar { color: var(--solar); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-unit { font-size: 0.7rem; color: var(--dim); margin-top: 0.2rem; font-family: 'Space Mono', monospace; }
+
+  /* ── Chart area ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.8rem;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+  }
+  .chart-title { font-size: 1rem; font-weight: 600; }
+  .chart-country { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; color: var(--solar); }
+  .chart-meta { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .chart-wrap { position: relative; height: 260px; }
+
+  /* ── Compare section ── */
+  .compare-section { margin-bottom: 2rem; }
+  .section-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .compare-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    border: 1px solid;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .chip:hover { opacity: 0.7; }
+  .chip .remove { font-size: 0.9rem; line-height: 1; opacity: 0.6; }
+
+  .compare-chart-wrap { position: relative; height: 220px; }
+  .compare-add {
+    background: transparent;
+    border: 1px dashed var(--dim);
+    color: var(--dim);
+    padding: 0.4rem 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+  }
+  .compare-add:hover { border-color: var(--solar); color: var(--solar); }
+
+  /* ── League table ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .table-head {
+    display: grid;
+    grid-template-columns: 2rem 1fr 120px 100px 80px;
+    gap: 1rem;
+    padding: 0.75rem 1.2rem;
+    background: var(--bg);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .table-row {
+    display: grid;
+    grid-template-columns: 2rem 1fr 120px 100px 80px;
+    gap: 1rem;
+    padding: 0.7rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+    transition: background 0.15s;
+    cursor: pointer;
+    align-items: center;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: rgba(245,166,35,0.04); }
+  .rank { color: var(--dim); font-family: 'Space Mono', monospace; font-size: 0.72rem; }
+  .bar-cell { display: flex; align-items: center; gap: 0.5rem; }
+  .mini-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--solar), var(--solar2));
+    min-width: 2px;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .energy-val { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: var(--solar); }
+  .peak-val { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: var(--accent); }
+  .daylight-val { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: var(--muted); }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  footer span { font-family: 'Space Mono', monospace; font-size: 0.68rem; color: var(--dim); }
+  .footer-link { color: var(--solar); text-decoration: none; }
+  .footer-link:hover { text-decoration: underline; }
+
+  /* ── API status ── */
+  .api-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+  .api-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+  .api-url { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: var(--accent); }
+  .api-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  .dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Responsive ── */
+  @media(max-width:700px){
+    header { flex-direction: column; gap: 1rem; }
+    .subtitle { margin-left: 0; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+    .table-head, .table-row { grid-template-columns: 2rem 1fr 90px 80px; }
+    .table-head > :last-child, .table-row > :last-child { display: none; }
+    .controls { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="logo">Solar Profiles
+        <span>GLOBAL ATLAS · JAN 1 · 197 COUNTRIES</span>
+      </div>
+    </div>
+    <div class="subtitle">
+      <div class="tag">PVWATTS V8 MODEL</div><br>
+      PVWatts-equivalent AC power generation profiles. 4 kW DC system, standard crystalline silicon module, 14% losses. Clear-sky Ineichen model. Local solar time (midnight → midnight).
+    </div>
+  </header>
+
+  <!-- API STATUS BOX -->
+  <div class="api-box" id="apiBox">
+    <div>
+      <div class="api-label">REST API</div>
+      <div class="api-url" id="apiUrl">http://localhost:8000</div>
+    </div>
+    <div>
+      <div class="api-label">Quick example</div>
+      <div class="api-url">GET /profile/Germany</div>
+    </div>
+    <div class="api-status">
+      <div class="dot" id="apiDot"></div>
+      <span id="apiStatusText" style="color:var(--muted)">checking...</span>
+    </div>
+    <div>
+      <div class="api-label">Docs</div>
+      <div class="api-url"><a href="http://localhost:8000/docs" class="footer-link" target="_blank">/docs ↗</a></div>
+    </div>
+  </div>
+
+  <!-- COUNTRY SELECTOR -->
+  <div class="controls">
+    <div>
+      <label>SELECT COUNTRY</label>
+      <select id="countrySelect"></select>
+    </div>
+    <div class="search-wrap">
+      <label>SEARCH</label>
+      <input id="searchInput" type="text" placeholder="e.g. land, south...">
+      <span class="search-icon">⌕</span>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">Daily Energy</div>
+      <div class="stat-value solar" id="statEnergy">—</div>
+      <div class="stat-unit">Wh / day · 4 kW system</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Peak Output</div>
+      <div class="stat-value solar" id="statPeak">—</div>
+      <div class="stat-unit">W AC · peak hour</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Peak Hour</div>
+      <div class="stat-value accent" id="statPeakHour">—</div>
+      <div class="stat-unit">local solar time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Daylight Hours</div>
+      <div class="stat-value accent" id="statDaylight">—</div>
+      <div class="stat-unit">hours of generation Jan 1</div>
+    </div>
+  </div>
+
+  <!-- MAIN CHART -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">24-HOUR GENERATION PROFILE</div>
+        <div class="chart-country" id="chartCountry">—</div>
+        <div class="chart-meta">January 1 · Local Solar Time · AC Power (W)</div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>
+
+  <!-- COMPARE -->
+  <div class="compare-section">
+    <div class="section-title">Compare Countries</div>
+    <div class="compare-chips" id="compareChips"></div>
+    <button class="compare-add" id="addCompareBtn">+ Add current country to comparison</button>
+    <div class="chart-card" id="compareCard" style="display:none">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">MULTI-COUNTRY COMPARISON</div>
+          <div class="chart-meta">January 1 · Local Solar Time · AC Power (W)</div>
+        </div>
+      </div>
+      <div class="compare-chart-wrap">
+        <canvas id="compareChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAGUE TABLE -->
+  <div class="section-title">Rankings — Daily Energy Output</div>
+  <div class="table-card">
+    <div class="table-head">
+      <div>#</div>
+      <div>Country</div>
+      <div>Daily Energy</div>
+      <div>Peak (W)</div>
+      <div>Daylight h</div>
+    </div>
+    <div id="tableBody"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>Data: PVWatts V8 algorithm (pvlib) · 4 kW DC · Standard module · 14% losses</span>
+    <span><a href="https://github.com/YOUR_USERNAME/solar-profiles" class="footer-link" target="_blank">github.com/YOUR_USERNAME/solar-profiles ↗</a></span>
+  </footer>
+</div>
+
+<script>
+// ── Embedded data loader ───────────────────────────────────────────────────
+// Try API first; fall back to CSV embedded via fetch (same-origin) or inline
+
+const API_BASE = 'http://localhost:8000';
+let DATA = [];        // [{Country, Latitude, ..., Hour_00..23, Daily_Energy_Wh, ...}]
+let mainChart = null;
+let compareChart = null;
+let compareCountries = [];
+
+const COMPARE_COLORS = [
+  '#f5a623','#00d4aa','#ff6b35','#7c6aff','#ff3d8a','#00b4d8','#90e0ef'
+];
+
+// ── Fetch data ─────────────────────────────────────────────────────────────
+async function loadData() {
+  // Try the REST API first
+  try {
+    const r = await fetch(`${API_BASE}/all`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      const j = await r.json();
+      DATA = j.data;
+      setApiStatus(true);
+      return;
+    }
+  } catch(e) {}
+  setApiStatus(false);
+  // Fall back to local CSV file (works when opened via file:// or a local server)
+  try {
+    const r = await fetch('../data/pvwatts_solar_profiles_jan1.csv');
+    if (!r.ok) throw new Error();
+    const text = await r.text();
+    DATA = parseCSV(text);
+    return;
+  } catch(e) {}
+  // Last resort: same directory
+  try {
+    const r = await fetch('pvwatts_solar_profiles_jan1.csv');
+    if (!r.ok) throw new Error();
+    const text = await r.text();
+    DATA = parseCSV(text);
+  } catch(e) {
+    console.error('Could not load data. Start the API server with: solar-profiles serve');
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+  return lines.slice(1).map(line => {
+    const vals = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => {
+      const v = vals[i];
+      obj[h] = isNaN(v) ? v : parseFloat(v);
+    });
+    return obj;
+  });
+}
+
+function setApiStatus(live) {
+  document.getElementById('apiDot').className = 'dot' + (live ? ' live' : '');
+  document.getElementById('apiStatusText').textContent = live ? 'API online' : 'API offline (using CSV)';
+  document.getElementById('apiStatusText').style.color = live ? 'var(--accent)' : 'var(--dim)';
+}
+
+// ── Hourly array ────────────────────────────────────────────────────────────
+function getHours(row) {
+  return Array.from({length: 24}, (_, i) => row[`Hour_${String(i).padStart(2,'0')}_Local_AC_W`] || 0);
+}
+
+// ── Populate controls ───────────────────────────────────────────────────────
+function populateSelect(countries) {
+  const sel = document.getElementById('countrySelect');
+  sel.innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.addEventListener('change', () => renderCountry(sel.value));
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  const sel = document.getElementById('countrySelect');
+  const opts = DATA.map(d => d.Country);
+  const filtered = q ? opts.filter(c => c.toLowerCase().includes(q)) : opts;
+  sel.innerHTML = filtered.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (filtered.length) renderCountry(filtered[0]);
+});
+
+// ── Render single country ───────────────────────────────────────────────────
+function renderCountry(name) {
+  const row = DATA.find(d => d.Country === name);
+  if (!row) return;
+  const hours = getHours(row);
+  const daylight = hours.filter(v => v > 0).length;
+
+  document.getElementById('chartCountry').textContent = name;
+  document.getElementById('statEnergy').textContent = row.Daily_Energy_Wh.toLocaleString('en', {maximumFractionDigits:0});
+  document.getElementById('statPeak').textContent = row.Peak_AC_W.toLocaleString('en', {maximumFractionDigits:0});
+  document.getElementById('statPeakHour').textContent = `${String(row.Peak_Hour_Local).padStart(2,'0')}:00`;
+  document.getElementById('statDaylight').textContent = daylight;
+
+  const labels = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+
+  if (mainChart) mainChart.destroy();
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: `${name} AC Power (W)`,
+        data: hours,
+        backgroundColor: hours.map(v => v > 0
+          ? `rgba(245,166,35,${0.2 + 0.6 * (v / Math.max(...hours))})`
+          : 'rgba(30,30,46,0.5)'),
+        borderColor: hours.map(v => v > 0 ? 'rgba(245,166,35,0.8)' : 'transparent'),
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#12121a',
+        borderColor: '#1e1e2e', borderWidth: 1,
+        titleColor: '#f5a623', bodyColor: '#e8e8f0',
+        titleFont: { family: 'Space Mono', size: 11 },
+        bodyFont: { family: 'Space Mono', size: 11 },
+        callbacks: { label: ctx => ` ${ctx.parsed.y.toLocaleString()} W AC` }
+      }},
+      scales: {
+        x: { grid: { color: '#1e1e2e' }, ticks: { color: '#7070a0', font: { family: 'Space Mono', size: 9 }, maxRotation: 0 }},
+        y: { grid: { color: '#1e1e2e' }, ticks: { color: '#7070a0', font: { family: 'Space Mono', size: 10 },
+          callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v }}
+      }
+    }
+  });
+}
+
+// ── Compare logic ──────────────────────────────────────────────────────────
+document.getElementById('addCompareBtn').addEventListener('click', () => {
+  const name = document.getElementById('countrySelect').value;
+  if (!name || compareCountries.includes(name)) return;
+  if (compareCountries.length >= 7) { alert('Maximum 7 countries'); return; }
+  compareCountries.push(name);
+  renderCompare();
+});
+
+function renderCompare() {
+  const chips = document.getElementById('compareChips');
+  chips.innerHTML = compareCountries.map((c, i) => `
+    <div class="chip" style="color:${COMPARE_COLORS[i]};border-color:${COMPARE_COLORS[i]}20;background:${COMPARE_COLORS[i]}10"
+         onclick="removeCompare('${c}')">
+      ${c} <span class="remove">✕</span>
+    </div>`).join('');
+
+  if (compareCountries.length < 2) {
+    document.getElementById('compareCard').style.display = 'none';
+    if (compareChart) { compareChart.destroy(); compareChart = null; }
+    return;
+  }
+  document.getElementById('compareCard').style.display = 'block';
+
+  const labels = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+  const datasets = compareCountries.map((name, i) => {
+    const row = DATA.find(d => d.Country === name);
+    return {
+      label: name,
+      data: getHours(row),
+      borderColor: COMPARE_COLORS[i],
+      backgroundColor: COMPARE_COLORS[i] + '20',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2,
+      pointRadius: 0,
+    };
+  });
+
+  if (compareChart) compareChart.destroy();
+  const ctx = document.getElementById('compareChart').getContext('2d');
+  compareChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#e8e8f0', font: { family: 'Space Mono', size: 10 }, boxWidth: 12 }},
+        tooltip: {
+          backgroundColor: '#12121a', borderColor: '#1e1e2e', borderWidth: 1,
+          titleColor: '#7070a0', bodyColor: '#e8e8f0',
+          titleFont: { family: 'Space Mono', size: 10 }, bodyFont: { family: 'Space Mono', size: 10 },
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} W` }
+        }
+      },
+      scales: {
+        x: { grid: { color: '#1e1e2e' }, ticks: { color: '#7070a0', font: { family: 'Space Mono', size: 9 }, maxRotation: 0 }},
+        y: { grid: { color: '#1e1e2e' }, ticks: { color: '#7070a0', font: { family: 'Space Mono', size: 10 },
+          callback: v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v }}
+      }
+    }
+  });
+}
+
+function removeCompare(name) {
+  compareCountries = compareCountries.filter(c => c !== name);
+  renderCompare();
+}
+
+// ── League table ────────────────────────────────────────────────────────────
+function renderTable() {
+  const sorted = [...DATA].sort((a,b) => b.Daily_Energy_Wh - a.Daily_Energy_Wh);
+  const maxE = sorted[0].Daily_Energy_Wh;
+  const body = document.getElementById('tableBody');
+  body.innerHTML = sorted.map((row, i) => {
+    const barW = Math.round((row.Daily_Energy_Wh / maxE) * 80);
+    const daylight = getHours(row).filter(v => v > 0).length;
+    return `<div class="table-row" onclick="selectCountry('${row.Country}')">
+      <div class="rank">${i+1}</div>
+      <div class="bar-cell">
+        <div class="mini-bar" style="width:${barW}px"></div>
+        <span>${row.Country}</span>
+      </div>
+      <div class="energy-val">${row.Daily_Energy_Wh.toLocaleString('en',{maximumFractionDigits:0})} Wh</div>
+      <div class="peak-val">${row.Peak_AC_W.toLocaleString('en',{maximumFractionDigits:0})}</div>
+      <div class="daylight-val">${daylight}h</div>
+    </div>`;
+  }).join('');
+}
+
+function selectCountry(name) {
+  document.getElementById('countrySelect').value = name;
+  renderCountry(name);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadData();
+  if (!DATA.length) return;
+  const countries = DATA.map(d => d.Country).sort();
+  populateSelect(countries);
+  renderCountry(countries[0]);
+  renderTable();
+}
+
+init();
+</script>
+</body>
+</html>
