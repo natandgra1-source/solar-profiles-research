@@ -1,4 +1,4 @@
-# 🌞 Solar Profiles — Global PVWatts Atlas
+#  Solar Profiles — Global PVWatts Atlas
 
 > PVWatts-equivalent solar AC power generation profiles for **197 countries**, January 1st, 24-hour local-time resolution.
 
