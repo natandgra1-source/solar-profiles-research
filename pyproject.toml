@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "solar-profiles"
+version = "1.0.0"
+description = "PVWatts-equivalent solar generation profiles for 197 countries — January 1st, 24-hour local-time resolution"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["solar", "pvwatts", "energy", "photovoltaic", "renewable"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "pandas>=1.5",
+    "numpy>=1.23",
+]
+
+[project.optional-dependencies]
+api    = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
+dev    = ["pytest>=7", "httpx>=0.27", "pvlib>=0.10"]
+all    = ["solar-profiles[api,dev]"]
+
+[project.scripts]
+solar-profiles = "solar_profiles.cli:main"
+
+[project.urls]
+Repository  = "https://github.com/YOUR_USERNAME/solar-profiles"
+"Bug Tracker" = "https://github.com/YOUR_USERNAME/solar-profiles/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["solar_profiles*"]
+
+[tool.setuptools.package-data]
+"*" = ["../data/*.csv"]
