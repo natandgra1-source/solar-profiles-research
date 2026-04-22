@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/YOUR_USERNAME/solar-profiles/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/solar-profiles/actions)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 
 ---
 
@@ -203,9 +203,7 @@ python scripts/generate.py   # outputs to data/
 
 ---
 
-## License
 
-MIT — see [LICENSE](LICENSE).
 
 ---
 
