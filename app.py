@@ -76,7 +76,7 @@ if page == "🌍 World Map":
         geo=dict(bgcolor="#0f172a", showframe=False, showcoastlines=True,
                  coastlinecolor="#334155", showland=True, landcolor="#1e293b",
                  showocean=True, oceancolor="#0f172a"),
-        coloraxis_colorbar=dict(title=label, tickfont=dict(color="white"), title=dict(font=dict(color="white"))),
+        coloraxis_colorbar=dict(title=dict(text=label, font=dict(color="white")), tickfont=dict(color="white")),
         font=dict(color="white"),
         title_font=dict(color="white", size=16),
         margin=dict(l=0, r=0, t=40, b=0),
@@ -127,7 +127,7 @@ elif page == "📊 Country Profile":
             x=hour_labels, y=vals, name=label,
             mode="lines", fill="tozeroy",
             line=dict(color=SEASON_COLORS[key], width=2),
-            fillcolor=SEASON_COLORS[key].replace(")", ",0.15)").replace("rgb", "rgba") if "rgb" in SEASON_COLORS[key] else SEASON_COLORS[key] + "26",
+            fillcolor="rgba(100,100,100,0.15)",
         ))
 
     fig.update_layout(
