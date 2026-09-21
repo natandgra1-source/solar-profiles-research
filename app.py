@@ -177,6 +177,44 @@ with tab_solar:
     )
 
     st.divider()
+    st.subheader("Compare two countries")
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        country_a = st.selectbox("Country A", SOLAR_COUNTRIES, index=SOLAR_COUNTRIES.index(country_solar), key="cmp_a")
+    with col_c2:
+        country_b = st.selectbox("Country B", SOLAR_COUNTRIES, index=min(SOLAR_COUNTRIES.index(country_solar)+1, len(SOLAR_COUNTRIES)-1), key="cmp_b")
+
+    row_a = solar_df[solar_df["Country"] == country_a].iloc[0]
+    row_b = solar_df[solar_df["Country"] == country_b].iloc[0]
+    h_a = [row_a[f"{season_key}_Hour_{h:02d}_W"] for h in range(24)]
+    h_b = [row_b[f"{season_key}_Hour_{h:02d}_W"] for h in range(24)]
+
+    fig_cmp = go.Figure()
+    fig_cmp.add_trace(go.Scatter(x=HOURS, y=h_a, name=country_a,
+        mode="lines", line=dict(color="#f59e0b", width=2.5),
+        fill="tozeroy", fillcolor="rgba(245,158,11,0.12)"))
+    fig_cmp.add_trace(go.Scatter(x=HOURS, y=h_b, name=country_b,
+        mode="lines", line=dict(color="#60a5fa", width=2.5),
+        fill="tozeroy", fillcolor="rgba(96,165,250,0.12)"))
+    dark_chart(fig_cmp, 340, "AC Power Output (W)")
+    st.plotly_chart(fig_cmp, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+    col1.metric(f"{country_a} daily energy", f"{sum(h_a)/1000:.1f} kWh")
+    col2.metric(f"{country_b} daily energy", f"{sum(h_b)/1000:.1f} kWh")
+
+    # Download comparison CSV
+    cmp_df = pd.DataFrame({"Hour": HOURS, f"{country_a}_W": [round(v,2) for v in h_a], f"{country_b}_W": [round(v,2) for v in h_b]})
+    fname_cmp = f"{country_a.replace(' ','_')}_vs_{country_b.replace(' ','_')}_{season_key}.csv"
+    st.download_button(
+        label=f"Download comparison CSV",
+        data=cmp_df.to_csv(index=False).encode("utf-8"),
+        file_name=fname_cmp,
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+    st.divider()
     st.markdown("**Download all seasons for this country**")
     all_seasons = pd.DataFrame({"Hour": HOURS})
     for slabel, skey in SEASONS.items():
