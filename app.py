@@ -1,6 +1,6 @@
 """
 app.py - Solar & Load Profile Explorer
-Two tabs: Load Profiles | Solar Profiles
+Sidebar navigation | Load Profiles | Solar Profiles
 Visualize and download data for any country.
 """
 import streamlit as st
@@ -12,14 +12,16 @@ from pathlib import Path
 st.set_page_config(
     page_title="Solar & Load Profile Explorer",
     page_icon="",
-    layout="centered",
+    layout="wide",
 )
 
 st.markdown("""
 <style>
-    .block-container { padding-top: 2rem; max-width: 860px; }
+    .block-container { padding-top: 1.5rem; max-width: 960px; }
     h1 { font-size: 1.8rem !important; }
-    .stTabs [data-baseweb="tab"] { font-size: 1rem; font-weight: 600; padding: 0.6rem 1.4rem; }
+    section[data-testid="stSidebar"] { background: #0f172a; }
+    section[data-testid="stSidebar"] * { color: white !important; }
+    section[data-testid="stSidebar"] .stRadio label { font-size: 1rem; padding: 0.3rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -61,14 +63,26 @@ def dark_chart(fig, height=380, ytitle=""):
     )
     return fig
 
+# ── SIDEBAR NAVIGATION ────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("## Solar & Load Explorer")
+    st.markdown("---")
+    page = st.radio(
+        "Navigate",
+        ["Load Profiles", "Solar Profiles", "Compare Countries"],
+        label_visibility="collapsed",
+    )
+    st.markdown("---")
+    st.caption("Solar: PVWatts V8 (pvlib)")
+    st.caption("Load: Country load profile dataset")
+    st.caption("GOAL Lab Undergraduate Research")
+
 st.title("Solar & Load Profile Explorer")
-st.caption("Visualize and download hourly load and solar generation profiles for countries worldwide.")
+st.caption("Hourly load and solar generation profiles for countries worldwide.")
 st.divider()
 
-tab_load, tab_solar = st.tabs(["Load Profiles", "Solar Profiles"])
-
-# ── TAB 1: LOAD PROFILES ──────────────────────────────────────────────────────
-with tab_load:
+# ── PAGE: LOAD PROFILES ───────────────────────────────────────────────────────
+if page == "Load Profiles":
     st.subheader("Electricity Load Profile")
     st.caption(f"Normalized hourly demand profiles for {len(LOAD_COUNTRIES)} countries. "
                "Values represent load relative to daily average (1.0 = average demand).")
@@ -129,8 +143,8 @@ with tab_load:
         use_container_width=True,
     )
 
-# ── TAB 2: SOLAR PROFILES ─────────────────────────────────────────────────────
-with tab_solar:
+# ── PAGE: SOLAR PROFILES ──────────────────────────────────────────────────────
+elif page == "Solar Profiles":
     st.subheader("Solar Generation Profile")
     st.caption(f"PVWatts-equivalent AC power output for {len(SOLAR_COUNTRIES)} countries. "
                "4 kW DC system, standard module, clear-sky model.")
@@ -177,44 +191,6 @@ with tab_solar:
     )
 
     st.divider()
-    st.subheader("Compare two countries")
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        country_a = st.selectbox("Country A", SOLAR_COUNTRIES, index=SOLAR_COUNTRIES.index(country_solar), key="cmp_a")
-    with col_c2:
-        country_b = st.selectbox("Country B", SOLAR_COUNTRIES, index=min(SOLAR_COUNTRIES.index(country_solar)+1, len(SOLAR_COUNTRIES)-1), key="cmp_b")
-
-    row_a = solar_df[solar_df["Country"] == country_a].iloc[0]
-    row_b = solar_df[solar_df["Country"] == country_b].iloc[0]
-    h_a = [row_a[f"{season_key}_Hour_{h:02d}_W"] for h in range(24)]
-    h_b = [row_b[f"{season_key}_Hour_{h:02d}_W"] for h in range(24)]
-
-    fig_cmp = go.Figure()
-    fig_cmp.add_trace(go.Scatter(x=HOURS, y=h_a, name=country_a,
-        mode="lines", line=dict(color="#f59e0b", width=2.5),
-        fill="tozeroy", fillcolor="rgba(245,158,11,0.12)"))
-    fig_cmp.add_trace(go.Scatter(x=HOURS, y=h_b, name=country_b,
-        mode="lines", line=dict(color="#60a5fa", width=2.5),
-        fill="tozeroy", fillcolor="rgba(96,165,250,0.12)"))
-    dark_chart(fig_cmp, 340, "AC Power Output (W)")
-    st.plotly_chart(fig_cmp, use_container_width=True)
-
-    col1, col2 = st.columns(2)
-    col1.metric(f"{country_a} daily energy", f"{sum(h_a)/1000:.1f} kWh")
-    col2.metric(f"{country_b} daily energy", f"{sum(h_b)/1000:.1f} kWh")
-
-    # Download comparison CSV
-    cmp_df = pd.DataFrame({"Hour": HOURS, f"{country_a}_W": [round(v,2) for v in h_a], f"{country_b}_W": [round(v,2) for v in h_b]})
-    fname_cmp = f"{country_a.replace(' ','_')}_vs_{country_b.replace(' ','_')}_{season_key}.csv"
-    st.download_button(
-        label=f"Download comparison CSV",
-        data=cmp_df.to_csv(index=False).encode("utf-8"),
-        file_name=fname_cmp,
-        mime="text/csv",
-        use_container_width=True,
-    )
-
-    st.divider()
     st.markdown("**Download all seasons for this country**")
     all_seasons = pd.DataFrame({"Hour": HOURS})
     for slabel, skey in SEASONS.items():
@@ -244,6 +220,78 @@ with tab_solar:
         label=f"Download all {len(SOLAR_COUNTRIES)} countries - {season_label} (CSV)",
         data=all_solar.to_csv(index=False).encode("utf-8"),
         file_name=f"all_countries_solar_{season_key}.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+# ── PAGE: COMPARE COUNTRIES ───────────────────────────────────────────────────
+elif page == "Compare Countries":
+    st.subheader("Compare Solar Profiles")
+    st.caption("Normalized profiles (0-1 scale) let you compare generation shape and timing "
+               "between countries regardless of absolute output differences.")
+
+    col_s = st.columns(1)[0]
+    with col_s:
+        season_label_cmp = st.selectbox("Season", list(SEASONS.keys()), key="cmp_season")
+    season_key_cmp = SEASONS[season_label_cmp]
+
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+        country_a = st.selectbox("Country A", SOLAR_COUNTRIES, key="cmp_a")
+    with col_c2:
+        default_b = min(SOLAR_COUNTRIES.index(country_a) + 1, len(SOLAR_COUNTRIES) - 1)
+        country_b = st.selectbox("Country B", SOLAR_COUNTRIES, index=default_b, key="cmp_b")
+
+    row_a = solar_df[solar_df["Country"] == country_a].iloc[0]
+    row_b = solar_df[solar_df["Country"] == country_b].iloc[0]
+
+    h_a_raw = np.array([row_a[f"{season_key_cmp}_Hour_{h:02d}_W"] for h in range(24)], dtype=float)
+    h_b_raw = np.array([row_b[f"{season_key_cmp}_Hour_{h:02d}_W"] for h in range(24)], dtype=float)
+
+    # Normalize to 0-1 by dividing each country by its own daily peak
+    peak_a = h_a_raw.max()
+    peak_b = h_b_raw.max()
+    h_a_norm = h_a_raw / peak_a if peak_a > 0 else h_a_raw
+    h_b_norm = h_b_raw / peak_b if peak_b > 0 else h_b_raw
+
+    fig_cmp = go.Figure()
+    fig_cmp.add_trace(go.Scatter(
+        x=HOURS, y=h_a_norm,
+        name=f"{country_a}  (peak {peak_a:.0f} W)",
+        mode="lines",
+        line=dict(color="#f59e0b", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(245,158,11,0.12)",
+    ))
+    fig_cmp.add_trace(go.Scatter(
+        x=HOURS, y=h_b_norm,
+        name=f"{country_b}  (peak {peak_b:.0f} W)",
+        mode="lines",
+        line=dict(color="#60a5fa", width=2.5),
+        fill="tozeroy",
+        fillcolor="rgba(96,165,250,0.12)",
+    ))
+    dark_chart(fig_cmp, 380, "Normalized Output (0 = none, 1 = peak)")
+    st.plotly_chart(fig_cmp, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+    col1.metric(f"{country_a} daily energy", f"{h_a_raw.sum()/1000:.1f} kWh", f"Peak: {peak_a:.0f} W")
+    col2.metric(f"{country_b} daily energy", f"{h_b_raw.sum()/1000:.1f} kWh", f"Peak: {peak_b:.0f} W")
+
+    st.divider()
+    st.markdown("**Download comparison CSV**")
+    cmp_df = pd.DataFrame({
+        "Hour":               HOURS,
+        f"{country_a}_W":     h_a_raw.round(2),
+        f"{country_b}_W":     h_b_raw.round(2),
+        f"{country_a}_norm":  h_a_norm.round(4),
+        f"{country_b}_norm":  h_b_norm.round(4),
+    })
+    fname_cmp = f"{country_a.replace(' ','_')}_vs_{country_b.replace(' ','_')}_{season_key_cmp}.csv"
+    st.download_button(
+        label="Download comparison CSV (raw + normalized)",
+        data=cmp_df.to_csv(index=False).encode("utf-8"),
+        file_name=fname_cmp,
         mime="text/csv",
         use_container_width=True,
     )
