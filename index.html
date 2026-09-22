@@ -1,0 +1,536 @@
+<title>GOAL Lab Energy Data</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root {
+  --gt-gold:    #B3A369;
+  --gt-navy:    #003057;
+  --gt-navy-d:  #001f3d;
+  --gt-gold-l:  #d4c47a;
+  --bg:         #001830;
+  --surface:    #002445;
+  --surface2:   #003060;
+  --border:     #0a4080;
+  --text:       #e8edf5;
+  --muted:      #7a9cbf;
+  --accent:     #B3A369;
+  --accent2:    #4eb3e8;
+  --good:       #34d399;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100%;min-height:100vh;font-size:15px;line-height:1.5}
+
+/* SIDEBAR */
+#sidebar{
+  width:220px;min-width:220px;background:var(--gt-navy-d);
+  display:flex;flex-direction:column;padding:0;
+  border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow:hidden;
+}
+.sb-logo{
+  padding:24px 20px 16px;
+  border-bottom:1px solid rgba(179,163,105,0.25);
+}
+.sb-logo .gt-mark{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;color:var(--gt-gold);
+  opacity:0.8;margin-bottom:4px;
+}
+.sb-logo h1{
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
+  color:#fff;line-height:1.3;
+}
+.sb-logo p{font-size:11px;color:var(--muted);margin-top:3px}
+.sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
+.sb-nav button{
+  background:none;border:none;width:100%;text-align:left;
+  padding:10px 12px;border-radius:8px;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;
+  color:var(--muted);transition:all .15s;display:flex;align-items:center;gap:10px;
+}
+.sb-nav button:hover{background:var(--surface);color:var(--text)}
+.sb-nav button.active{background:rgba(179,163,105,0.15);color:var(--gt-gold);border-left:3px solid var(--gt-gold);padding-left:9px}
+.sb-nav .nav-icon{font-size:15px;width:18px;text-align:center}
+.sb-footer{padding:16px;border-top:1px solid rgba(179,163,105,0.15);font-size:10px;color:var(--muted);line-height:1.5}
+
+/* MAIN */
+#main{flex:1;overflow-y:auto;padding:32px 36px;max-width:900px}
+.page{display:none}.page.active{display:block}
+
+/* HEADINGS */
+h2{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* CONTROLS */
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px}
+.field label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+select{
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:9px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;
+  cursor:pointer;outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a9cbf' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+}
+select:focus{border-color:var(--gt-gold)}
+
+/* STAT TILES */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.stat-sub{font-size:11px;color:var(--gt-gold);margin-top:2px}
+
+/* CHART */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;position:relative}
+canvas{display:block;width:100%!important}
+.chart-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
+
+/* DOWNLOAD BTN */
+.dl-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(179,163,105,0.12);border:1px solid var(--gt-gold);
+  color:var(--gt-gold);padding:10px 18px;border-radius:8px;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:8px;margin-right:8px;
+}
+.dl-btn:hover{background:rgba(179,163,105,0.25)}
+
+/* DIVIDER */
+hr{border:none;border-top:1px solid var(--border);margin:28px 0}
+
+/* BADGE */
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:2px 8px;border-radius:4px;
+  background:rgba(179,163,105,0.15);color:var(--gt-gold);margin-left:8px}
+
+/* LOADING */
+.loading{color:var(--muted);font-size:13px;padding:40px 0;text-align:center}
+
+/* TOOLTIP */
+#tooltip{
+  position:fixed;background:var(--gt-navy-d);border:1px solid var(--gt-gold);
+  border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;
+  opacity:0;transition:opacity .1s;z-index:100;max-width:180px;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+#tooltip strong{font-family:'Space Grotesk',sans-serif;color:var(--gt-gold);display:block;margin-bottom:4px}
+
+/* RESPONSIVE */
+@media(max-width:680px){
+  body{flex-direction:column}
+  #sidebar{width:100%;min-width:0;height:auto;position:static;flex-direction:row;align-items:center;flex-wrap:wrap}
+  .sb-logo{border-bottom:none;border-right:1px solid rgba(179,163,105,0.25);padding:12px 16px}
+  .sb-nav{flex-direction:row;flex-wrap:wrap;padding:8px;gap:4px}
+  .sb-footer{display:none}
+  #main{padding:20px 16px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-logo">
+    <div class="gt-mark">Georgia Tech</div>
+    <h1>GOAL Lab Energy Data</h1>
+    <p>Undergraduate Research</p>
+  </div>
+  <nav class="sb-nav">
+    <button class="active" onclick="nav('load')">
+      <span class="nav-icon">⚡</span> Load Profiles
+    </button>
+    <button onclick="nav('solar')">
+      <span class="nav-icon">☀</span> Solar Profiles
+    </button>
+    <button onclick="nav('compare')">
+      <span class="nav-icon">⇄</span> Compare Countries
+    </button>
+  </nav>
+  <div class="sb-footer">
+    Solar: PVWatts V8 (pvlib)<br>
+    Clear-sky model · 4 kW DC system<br>
+    Load: Country load profile dataset<br><br>
+    © 2026 GOAL Lab · Georgia Tech
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LOAD PAGE -->
+  <div class="page active" id="page-load">
+    <h2>Electricity Load Profiles <span class="badge">96 Countries</span></h2>
+    <p class="page-sub">Normalized hourly demand — 1.0 = daily average load</p>
+    <div class="controls">
+      <div class="field">
+        <label>Country</label>
+        <select id="load-country"></select>
+      </div>
+    </div>
+    <div class="stats" id="load-stats">
+      <div class="stat"><div class="stat-label">Climate</div><div class="stat-val" id="ls-climate">—</div></div>
+      <div class="stat"><div class="stat-label">Peak Hour</div><div class="stat-val" id="ls-peak">—</div><div class="stat-sub" id="ls-peak-sub"></div></div>
+      <div class="stat"><div class="stat-label">Trough Hour</div><div class="stat-val" id="ls-trough">—</div><div class="stat-sub" id="ls-trough-sub"></div></div>
+      <div class="stat"><div class="stat-label">Population</div><div class="stat-val" id="ls-pop">—</div></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Hourly Demand Factor</div>
+      <canvas id="load-chart" height="260"></canvas>
+    </div>
+    <button class="dl-btn" onclick="dlLoad()">↓ Download this country (CSV)</button>
+    <button class="dl-btn" onclick="dlLoadAll()">↓ Download all countries (CSV)</button>
+  </div>
+
+  <!-- SOLAR PAGE -->
+  <div class="page" id="page-solar">
+    <h2>Solar Generation Profiles <span class="badge">174 Countries</span></h2>
+    <p class="page-sub">PVWatts V8 clear-sky AC output · 4 kW DC system · equator-facing</p>
+    <div class="controls">
+      <div class="field">
+        <label>Country</label>
+        <select id="solar-country"></select>
+      </div>
+      <div class="field">
+        <label>Time Period</label>
+        <select id="solar-period"></select>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Daily Energy</div><div class="stat-val" id="ss-energy">—</div><div class="stat-sub">kWh</div></div>
+      <div class="stat"><div class="stat-label">Peak Output</div><div class="stat-val" id="ss-peak">—</div><div class="stat-sub">Watts</div></div>
+      <div class="stat"><div class="stat-label">Peak Hour</div><div class="stat-val" id="ss-hour">—</div></div>
+      <div class="stat"><div class="stat-label">Daylight Hours</div><div class="stat-val" id="ss-daylight">—</div></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">AC Power Output (W)</div>
+      <canvas id="solar-chart" height="260"></canvas>
+    </div>
+    <button class="dl-btn" onclick="dlSolar()">↓ Download this profile (CSV)</button>
+    <button class="dl-btn" onclick="dlSolarAll()">↓ Download all 16 periods (CSV)</button>
+    <button class="dl-btn" onclick="dlSolarAllCountries()">↓ Download all countries (CSV)</button>
+  </div>
+
+  <!-- COMPARE PAGE -->
+  <div class="page" id="page-compare">
+    <h2>Compare Countries</h2>
+    <p class="page-sub">Normalized solar profiles (0–1 scale) — shape and timing compared directly</p>
+    <div class="controls">
+      <div class="field">
+        <label>Time Period</label>
+        <select id="cmp-period"></select>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="field">
+        <label>Country A</label>
+        <select id="cmp-a"></select>
+      </div>
+      <div class="field">
+        <label>Country B</label>
+        <select id="cmp-b"></select>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Normalized Solar Output (0 = none · 1 = peak)</div>
+      <canvas id="cmp-chart" height="260"></canvas>
+    </div>
+    <div class="stats" style="grid-template-columns:1fr 1fr">
+      <div class="stat"><div class="stat-label" id="cmp-la">Country A</div><div class="stat-val" id="cmp-ea">—</div><div class="stat-sub" id="cmp-pa">—</div></div>
+      <div class="stat"><div class="stat-label" id="cmp-lb">Country B</div><div class="stat-val" id="cmp-eb">—</div><div class="stat-sub" id="cmp-pb">—</div></div>
+    </div>
+    <button class="dl-btn" onclick="dlCompare()">↓ Download comparison CSV</button>
+  </div>
+
+</div>
+
+<div id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const HOURS = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
+
+const PERIODS = {
+  "Winter (Jan 1)":"Winter_Jan1","Spring (Apr 1)":"Spring_Apr1",
+  "Summer (Jul 1)":"Summer_Jul1","Autumn (Oct 1)":"Autumn_Oct1",
+  "January 1":"Jan1","February 1":"Feb1","March 1":"Mar1","April 1":"Apr1",
+  "May 1":"May1","June 1":"Jun1","July 1":"Jul1","August 1":"Aug1",
+  "September 1":"Sep1","October 1":"Oct1","November 1":"Nov1","December 1":"Dec1"
+};
+
+let loadData=[], solarData=[];
+let loadChart=null, solarChart=null, cmpChart=null;
+
+// Chart.js global defaults
+Chart.defaults.font.family="'Inter',sans-serif";
+Chart.defaults.color="#7a9cbf";
+
+function mkTooltip(chart, labels, datasets){
+  const tip=document.getElementById('tooltip');
+  const canvas=chart.canvas;
+  canvas.addEventListener('mousemove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const pts=chart.getElementsAtEventForMode(e,'index',{intersect:false},false);
+    if(!pts.length){tip.style.opacity=0;return}
+    const idx=pts[0].index;
+    let html=`<strong>${labels[idx]}</strong>`;
+    datasets.forEach(d=>{ html+=`<div style="color:${d.color}">${d.name}: ${d.fmt(d.data[idx])}</div>`; });
+    tip.innerHTML=html;
+    tip.style.opacity=1;
+    let lx=e.clientX+14, ly=e.clientY-10;
+    if(lx+190>window.innerWidth) lx=e.clientX-200;
+    tip.style.left=lx+'px'; tip.style.top=ly+'px';
+  });
+  canvas.addEventListener('mouseleave',()=>{tip.style.opacity=0});
+}
+
+function populate(sel, items){ sel.innerHTML=items.map(v=>`<option>${v}</option>`).join(''); }
+
+// ── LOAD TAB ──────────────────────────────────────────────────────────────────
+function renderLoad(){
+  const country=document.getElementById('load-country').value;
+  const row=loadData.find(r=>r.Country===country); if(!row) return;
+  const profile=HOURS.map((_,h)=>+row[`Hour ${h}`]);
+  const pkH=profile.indexOf(Math.max(...profile));
+  const trH=profile.indexOf(Math.min(...profile));
+  document.getElementById('ls-climate').textContent=(row.Climate||'—').trim();
+  document.getElementById('ls-peak').textContent=HOURS[pkH];
+  document.getElementById('ls-peak-sub').textContent=profile[pkH].toFixed(2)+'x avg';
+  document.getElementById('ls-trough').textContent=HOURS[trH];
+  document.getElementById('ls-trough-sub').textContent=profile[trH].toFixed(2)+'x avg';
+  document.getElementById('ls-pop').textContent=(+row.Population/1e6).toFixed(1)+'M';
+
+  const ctx=document.getElementById('load-chart').getContext('2d');
+  if(loadChart) loadChart.destroy();
+  loadChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:HOURS,
+      datasets:[{
+        data:profile,
+        borderColor:'#4eb3e8',borderWidth:2,
+        backgroundColor:'rgba(78,179,232,0.08)',fill:true,
+        pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#4eb3e8',tension:0.35
+      },{
+        data:Array(24).fill(1),
+        borderColor:'rgba(255,255,255,0.15)',borderWidth:1,
+        borderDash:[4,4],pointRadius:0,fill:false
+      }]
+    },
+    options:{
+      responsive:true,animation:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},
+           title:{display:true,text:'Load Factor (x avg)',color:'#7a9cbf',font:{size:11}}}
+      }
+    }
+  });
+  mkTooltip(loadChart,HOURS,[{name:country,color:'#4eb3e8',data:profile,fmt:v=>v.toFixed(3)+'x'}]);
+}
+
+function dlLoad(){
+  const country=document.getElementById('load-country').value;
+  const row=loadData.find(r=>r.Country===country); if(!row) return;
+  const profile=HOURS.map((_,h)=>+row[`Hour ${h}`]);
+  let csv='Hour,Load_Factor\n'+HOURS.map((h,i)=>`${h},${profile[i].toFixed(6)}`).join('\n');
+  dlCSV(csv, country.replace(/ /g,'_')+'_load_profile.csv');
+}
+function dlLoadAll(){
+  const header=['Country','Climate','Population','GDP',...HOURS].join(',');
+  const rows=loadData.map(r=>[r.Country,(r.Climate||'').trim(),r.Population,r.GDP,...HOURS.map((_,h)=>(+r[`Hour ${h}`]).toFixed(6))].join(','));
+  dlCSV(header+'\n'+rows.join('\n'),'all_countries_load_profiles.csv');
+}
+
+// ── SOLAR TAB ─────────────────────────────────────────────────────────────────
+function renderSolar(){
+  const country=document.getElementById('solar-country').value;
+  const period=document.getElementById('solar-period').value;
+  const key=PERIODS[period]; if(!key) return;
+  const row=solarData.find(r=>r.Country===country); if(!row) return;
+  const profile=HOURS.map((_,h)=>+row[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  const total=profile.reduce((a,b)=>a+b,0);
+  const pk=Math.max(...profile);
+  const pkH=profile.indexOf(pk);
+  const daylight=profile.filter(v=>v>0).length;
+  document.getElementById('ss-energy').textContent=(total/1000).toFixed(2);
+  document.getElementById('ss-peak').textContent=pk.toFixed(0);
+  document.getElementById('ss-hour').textContent=HOURS[pkH];
+  document.getElementById('ss-daylight').textContent=daylight+' h';
+
+  const colors=profile.map(v=>{
+    const t=pk>0?v/pk:0;
+    if(t<0.3) return 'rgba(0,48,87,0.6)';
+    if(t<0.6) return '#B3A369';
+    return '#d4c47a';
+  });
+  const ctx=document.getElementById('solar-chart').getContext('2d');
+  if(solarChart) solarChart.destroy();
+  solarChart=new Chart(ctx,{
+    type:'bar',
+    data:{labels:HOURS,datasets:[{data:profile,backgroundColor:colors,borderRadius:3,borderSkipped:'bottom'}]},
+    options:{
+      responsive:true,animation:false,plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},
+           title:{display:true,text:'AC Power (W)',color:'#7a9cbf',font:{size:11}}}
+      }
+    }
+  });
+  mkTooltip(solarChart,HOURS,[{name:'AC Power',color:'#B3A369',data:profile,fmt:v=>v.toFixed(1)+' W'}]);
+}
+
+function dlSolar(){
+  const country=document.getElementById('solar-country').value;
+  const period=document.getElementById('solar-period').value;
+  const key=PERIODS[period];
+  const row=solarData.find(r=>r.Country===country); if(!row) return;
+  const profile=HOURS.map((_,h)=>+row[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  let csv='Hour,AC_Power_W\n'+HOURS.map((h,i)=>`${h},${profile[i].toFixed(2)}`).join('\n');
+  dlCSV(csv,country.replace(/ /g,'_')+'_'+key+'_solar.csv');
+}
+function dlSolarAll(){
+  const country=document.getElementById('solar-country').value;
+  const row=solarData.find(r=>r.Country===country); if(!row) return;
+  const header='Hour,'+Object.keys(PERIODS).join(',');
+  const rows=HOURS.map((h,i)=>{
+    const vals=Object.values(PERIODS).map(k=>(+row[`${k}_Hour_${String(i).padStart(2,'0')}_W`]).toFixed(2));
+    return `${h},${vals.join(',')}`;
+  });
+  dlCSV(header+'\n'+rows.join('\n'),country.replace(/ /g,'_')+'_all_periods.csv');
+}
+function dlSolarAllCountries(){
+  const period=document.getElementById('solar-period').value;
+  const key=PERIODS[period];
+  const header='Country,Latitude,Longitude,Daily_kWh,'+HOURS.map(h=>`${key}_${h}_W`).join(',');
+  const rows=solarData.map(r=>{
+    const profile=HOURS.map((_,h)=>+r[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+    const kwh=(profile.reduce((a,b)=>a+b,0)/1000).toFixed(2);
+    return [r.Country,r.Latitude,r.Longitude,kwh,...profile.map(v=>v.toFixed(2))].join(',');
+  });
+  dlCSV(header+'\n'+rows.join('\n'),'all_countries_'+key+'.csv');
+}
+
+// ── COMPARE TAB ───────────────────────────────────────────────────────────────
+function renderCompare(){
+  const period=document.getElementById('cmp-period').value;
+  const key=PERIODS[period];
+  const cA=document.getElementById('cmp-a').value;
+  const cB=document.getElementById('cmp-b').value;
+  const rowA=solarData.find(r=>r.Country===cA);
+  const rowB=solarData.find(r=>r.Country===cB);
+  if(!rowA||!rowB||!key) return;
+  const hA=HOURS.map((_,h)=>+rowA[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  const hB=HOURS.map((_,h)=>+rowB[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  const pkA=Math.max(...hA)||1, pkB=Math.max(...hB)||1;
+  const nA=hA.map(v=>v/pkA), nB=hB.map(v=>v/pkB);
+
+  document.getElementById('cmp-la').textContent=cA;
+  document.getElementById('cmp-lb').textContent=cB;
+  document.getElementById('cmp-ea').textContent=(hA.reduce((a,b)=>a+b,0)/1000).toFixed(2)+' kWh';
+  document.getElementById('cmp-eb').textContent=(hB.reduce((a,b)=>a+b,0)/1000).toFixed(2)+' kWh';
+  document.getElementById('cmp-pa').textContent='Peak: '+pkA.toFixed(0)+' W';
+  document.getElementById('cmp-pb').textContent='Peak: '+pkB.toFixed(0)+' W';
+
+  const ctx=document.getElementById('cmp-chart').getContext('2d');
+  if(cmpChart) cmpChart.destroy();
+  cmpChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:HOURS,
+      datasets:[
+        {label:cA,data:nA,borderColor:'#B3A369',borderWidth:2.5,
+         backgroundColor:'rgba(179,163,105,0.08)',fill:true,pointRadius:0,tension:0.35},
+        {label:cB,data:nB,borderColor:'#4eb3e8',borderWidth:2.5,
+         backgroundColor:'rgba(78,179,232,0.08)',fill:true,pointRadius:0,tension:0.35}
+      ]
+    },
+    options:{
+      responsive:true,animation:false,
+      plugins:{legend:{display:true,labels:{color:'#e8edf5',font:{size:12},boxWidth:12,padding:16}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},min:0,max:1,
+           title:{display:true,text:'Normalized Output (0–1)',color:'#7a9cbf',font:{size:11}}}
+      }
+    }
+  });
+  mkTooltip(cmpChart,HOURS,[
+    {name:cA,color:'#B3A369',data:nA,fmt:v=>v.toFixed(3)},
+    {name:cB,color:'#4eb3e8',data:nB,fmt:v=>v.toFixed(3)}
+  ]);
+}
+
+function dlCompare(){
+  const period=document.getElementById('cmp-period').value;
+  const key=PERIODS[period];
+  const cA=document.getElementById('cmp-a').value, cB=document.getElementById('cmp-b').value;
+  const rowA=solarData.find(r=>r.Country===cA), rowB=solarData.find(r=>r.Country===cB);
+  if(!rowA||!rowB) return;
+  const hA=HOURS.map((_,h)=>+rowA[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  const hB=HOURS.map((_,h)=>+rowB[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
+  const pkA=Math.max(...hA)||1, pkB=Math.max(...hB)||1;
+  const header=`Hour,${cA}_W,${cB}_W,${cA}_norm,${cB}_norm`;
+  const rows=HOURS.map((h,i)=>`${h},${hA[i].toFixed(2)},${hB[i].toFixed(2)},${(hA[i]/pkA).toFixed(4)},${(hB[i]/pkB).toFixed(4)}`);
+  dlCSV(header+'\n'+rows.join('\n'),cA.replace(/ /g,'_')+'_vs_'+cB.replace(/ /g,'_')+'_'+key+'.csv');
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function nav(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const btns=[...document.querySelectorAll('.sb-nav button')];
+  const map={load:0,solar:1,compare:2};
+  btns[map[id]].classList.add('active');
+}
+
+// ── CSV DOWNLOAD ──────────────────────────────────────────────────────────────
+function dlCSV(csv,fname){
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init(){
+  // Load both CSVs
+  const [loadRes, solarRes] = await Promise.all([
+    new Promise(res=>Papa.parse('data/load_profiles.csv',{download:true,header:true,skipEmptyLines:true,complete:r=>res(r.data)})),
+    new Promise(res=>Papa.parse('data/solar_seasonal_profiles.csv',{download:true,header:true,skipEmptyLines:true,complete:r=>res(r.data)}))
+  ]);
+  loadData=loadRes.map(r=>({...r,Country:(r.Country||'').trim()})).filter(r=>r.Country);
+  solarData=solarRes.map(r=>({...r,Country:(r.Country||'').trim()})).filter(r=>r.Country);
+
+  // Populate selects
+  const loadCountries=loadData.map(r=>r.Country).sort();
+  const solarCountries=solarData.map(r=>r.Country).sort();
+  const periods=Object.keys(PERIODS);
+
+  populate(document.getElementById('load-country'), loadCountries);
+  populate(document.getElementById('solar-country'), solarCountries);
+  populate(document.getElementById('solar-period'), periods);
+  populate(document.getElementById('cmp-period'), periods);
+  populate(document.getElementById('cmp-a'), solarCountries);
+  const selB=document.getElementById('cmp-b');
+  populate(selB, solarCountries);
+  selB.selectedIndex=1;
+
+  // Wire up change events
+  document.getElementById('load-country').addEventListener('change', renderLoad);
+  document.getElementById('solar-country').addEventListener('change', renderSolar);
+  document.getElementById('solar-period').addEventListener('change', renderSolar);
+  document.getElementById('cmp-period').addEventListener('change', renderCompare);
+  document.getElementById('cmp-a').addEventListener('change', renderCompare);
+  document.getElementById('cmp-b').addEventListener('change', renderCompare);
+
+  renderLoad();
+  renderSolar();
+  renderCompare();
+}
+
+init();
+</script>
