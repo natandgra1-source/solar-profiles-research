@@ -1,254 +1,162 @@
-<title>GOAL Lab Energy Data</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GOAL Lab · Solar & Load Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
-  --gt-gold:    #B3A369;
-  --gt-navy:    #003057;
-  --gt-navy-d:  #001f3d;
-  --gt-gold-l:  #d4c47a;
-  --bg:         #001830;
-  --surface:    #002445;
-  --surface2:   #003060;
-  --border:     #0a4080;
-  --text:       #e8edf5;
-  --muted:      #7a9cbf;
-  --accent:     #B3A369;
-  --accent2:    #4eb3e8;
-  --good:       #34d399;
-  color-scheme: dark;
+:root{
+  --gold:#B3A369;--gold-l:#d4c480;
+  --navy:#003057;--navy-d:#001f3d;--navy-dd:#00111f;
+  --bg:#001626;--surface:#002244;--surface2:#003060;
+  --border:#0a3a6a;--text:#dde6f0;--muted:#6a90b8;
+  --green:#34d399;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100%;min-height:100vh;font-size:15px;line-height:1.5}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px}
 
-/* SIDEBAR */
-#sidebar{
-  width:220px;min-width:220px;background:var(--gt-navy-d);
-  display:flex;flex-direction:column;padding:0;
-  border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow:hidden;
-}
-.sb-logo{
-  padding:24px 20px 16px;
-  border-bottom:1px solid rgba(179,163,105,0.25);
-}
-.sb-logo .gt-mark{
-  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:0.12em;text-transform:uppercase;color:var(--gt-gold);
-  opacity:0.8;margin-bottom:4px;
-}
-.sb-logo h1{
-  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
-  color:#fff;line-height:1.3;
-}
-.sb-logo p{font-size:11px;color:var(--muted);margin-top:3px}
-.sb-nav{flex:1;padding:16px 10px;display:flex;flex-direction:column;gap:4px}
-.sb-nav button{
-  background:none;border:none;width:100%;text-align:left;
-  padding:10px 12px;border-radius:8px;cursor:pointer;
-  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;
-  color:var(--muted);transition:all .15s;display:flex;align-items:center;gap:10px;
-}
+/* ── SIDEBAR ── */
+#sb{width:220px;min-width:220px;background:var(--navy-dd);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+.sb-head{padding:22px 18px 14px;border-bottom:1px solid rgba(179,163,105,.2)}
+.sb-head .label{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.sb-head h1{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#fff;line-height:1.35}
+.sb-head p{font-size:11px;color:var(--muted);margin-top:2px}
+.sb-nav{flex:1;padding:14px 8px;display:flex;flex-direction:column;gap:3px}
+.sb-nav button{background:none;border:none;width:100%;text-align:left;padding:9px 11px;
+  border-radius:7px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:12.5px;
+  font-weight:500;color:var(--muted);transition:all .12s;display:flex;align-items:center;gap:9px}
 .sb-nav button:hover{background:var(--surface);color:var(--text)}
-.sb-nav button.active{background:rgba(179,163,105,0.15);color:var(--gt-gold);border-left:3px solid var(--gt-gold);padding-left:9px}
-.sb-nav .nav-icon{font-size:15px;width:18px;text-align:center}
-.sb-footer{padding:16px;border-top:1px solid rgba(179,163,105,0.15);font-size:10px;color:var(--muted);line-height:1.5}
+.sb-nav button.active{background:rgba(179,163,105,.15);color:var(--gold);font-weight:600}
+.sb-nav .icon{font-size:15px;width:18px;text-align:center}
+.sb-foot{padding:12px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.6}
 
-/* MAIN */
-#main{flex:1;overflow-y:auto;padding:32px 36px;max-width:900px}
+/* ── MAIN ── */
+#main{flex:1;padding:32px 36px;overflow-y:auto;max-width:960px}
 .page{display:none}.page.active{display:block}
+h2{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0}
 
-/* HEADINGS */
-h2{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
-.page-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+/* controls */
+.controls{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+select{background:var(--surface);border:1px solid var(--border);color:var(--text);
+  padding:7px 10px;border-radius:7px;font-size:13px;cursor:pointer;min-width:180px}
+select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
 
-/* CONTROLS */
-.controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px}
-.field label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-select{
-  background:var(--surface);border:1px solid var(--border);color:var(--text);
-  padding:9px 12px;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;
-  cursor:pointer;outline:none;appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a9cbf' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
-}
-select:focus{border-color:var(--gt-gold)}
+/* metrics */
+.metrics{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 16px;min-width:130px}
+.metric .m-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.metric .m-val{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:#fff}
+.metric .m-sub{font-size:11px;color:var(--gold);margin-top:2px}
 
-/* STAT TILES */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-.stat-val{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
-.stat-sub{font-size:11px;color:var(--gt-gold);margin-top:2px}
+/* chart */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
+canvas{max-height:340px}
 
-/* CHART */
-.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;position:relative}
-canvas{display:block;width:100%!important}
-.chart-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
+/* download */
+.dl-btn{background:var(--surface2);border:1px solid var(--gold);color:var(--gold);
+  padding:9px 18px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;
+  font-family:'Space Grotesk',sans-serif;transition:all .12s;margin-right:8px;margin-bottom:8px}
+.dl-btn:hover{background:rgba(179,163,105,.2)}
 
-/* DOWNLOAD BTN */
-.dl-btn{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(179,163,105,0.12);border:1px solid var(--gt-gold);
-  color:var(--gt-gold);padding:10px 18px;border-radius:8px;
-  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .15s;margin-top:8px;margin-right:8px;
-}
-.dl-btn:hover{background:rgba(179,163,105,0.25)}
-
-/* DIVIDER */
-hr{border:none;border-top:1px solid var(--border);margin:28px 0}
-
-/* BADGE */
-.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;padding:2px 8px;border-radius:4px;
-  background:rgba(179,163,105,0.15);color:var(--gt-gold);margin-left:8px}
-
-/* LOADING */
-.loading{color:var(--muted);font-size:13px;padding:40px 0;text-align:center}
-
-/* TOOLTIP */
-#tooltip{
-  position:fixed;background:var(--gt-navy-d);border:1px solid var(--gt-gold);
-  border-radius:8px;padding:10px 14px;font-size:12px;pointer-events:none;
-  opacity:0;transition:opacity .1s;z-index:100;max-width:180px;
-  box-shadow:0 4px 20px rgba(0,0,0,.5);
-}
-#tooltip strong{font-family:'Space Grotesk',sans-serif;color:var(--gt-gold);display:block;margin-bottom:4px}
-
-/* RESPONSIVE */
-@media(max-width:680px){
-  body{flex-direction:column}
-  #sidebar{width:100%;min-width:0;height:auto;position:static;flex-direction:row;align-items:center;flex-wrap:wrap}
-  .sb-logo{border-bottom:none;border-right:1px solid rgba(179,163,105,0.25);padding:12px 16px}
-  .sb-nav{flex-direction:row;flex-wrap:wrap;padding:8px;gap:4px}
-  .sb-footer{display:none}
-  #main{padding:20px 16px}
-  .stats{grid-template-columns:repeat(2,1fr)}
-}
+/* loading */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:999}
+#loading h2{font-family:'Space Grotesk',sans-serif;color:var(--gold);margin-bottom:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--surface2);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#err{display:none;color:#f87171;font-size:13px;margin-top:12px;text-align:center;max-width:400px}
 </style>
+</head>
+<body>
 
-<!-- SIDEBAR -->
-<div id="sidebar">
-  <div class="sb-logo">
-    <div class="gt-mark">Georgia Tech</div>
-    <h1>GOAL Lab Energy Data</h1>
-    <p>Undergraduate Research</p>
-  </div>
-  <nav class="sb-nav">
-    <button class="active" onclick="nav('load')">
-      <span class="nav-icon">⚡</span> Load Profiles
-    </button>
-    <button onclick="nav('solar')">
-      <span class="nav-icon">☀</span> Solar Profiles
-    </button>
-    <button onclick="nav('compare')">
-      <span class="nav-icon">⇄</span> Compare Countries
-    </button>
-  </nav>
-  <div class="sb-footer">
-    Solar: PVWatts V8 (pvlib)<br>
-    Clear-sky model · 4 kW DC system<br>
-    Load: Country load profile dataset<br><br>
-    © 2026 GOAL Lab · Georgia Tech
-  </div>
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <h2 style="margin-top:16px;font-size:16px">Loading data…</h2>
+  <div id="err"></div>
 </div>
 
+<!-- SIDEBAR -->
+<nav id="sb">
+  <div class="sb-head">
+    <div class="label">Georgia Tech</div>
+    <h1>Solar & Load<br>Explorer</h1>
+    <p>GOAL Lab Research</p>
+  </div>
+  <div class="sb-nav">
+    <button class="active" onclick="nav('load')"><span class="icon">⚡</span>Load Profiles</button>
+    <button onclick="nav('solar')"><span class="icon">☀️</span>Solar Profiles</button>
+    <button onclick="nav('compare')"><span class="icon">📊</span>Compare Countries</button>
+  </div>
+  <div class="sb-foot">
+    Solar: PVWatts V8 (pvlib)<br>
+    Load: Country dataset<br>
+    © 2026 GOAL Lab
+  </div>
+</nav>
+
 <!-- MAIN -->
-<div id="main">
+<main id="main">
 
   <!-- LOAD PAGE -->
-  <div class="page active" id="page-load">
-    <h2>Electricity Load Profiles <span class="badge">96 Countries</span></h2>
-    <p class="page-sub">Normalized hourly demand — 1.0 = daily average load</p>
+  <div id="page-load" class="page active">
+    <h2>Electricity Load Profiles</h2>
+    <p class="sub">Normalized hourly demand — 1.0 = daily average demand</p>
     <div class="controls">
-      <div class="field">
-        <label>Country</label>
-        <select id="load-country"></select>
-      </div>
+      <div><label>Country</label><select id="load-country" onchange="renderLoad()"></select></div>
     </div>
-    <div class="stats" id="load-stats">
-      <div class="stat"><div class="stat-label">Climate</div><div class="stat-val" id="ls-climate">—</div></div>
-      <div class="stat"><div class="stat-label">Peak Hour</div><div class="stat-val" id="ls-peak">—</div><div class="stat-sub" id="ls-peak-sub"></div></div>
-      <div class="stat"><div class="stat-label">Trough Hour</div><div class="stat-val" id="ls-trough">—</div><div class="stat-sub" id="ls-trough-sub"></div></div>
-      <div class="stat"><div class="stat-label">Population</div><div class="stat-val" id="ls-pop">—</div></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Hourly Demand Factor</div>
-      <canvas id="load-chart" height="260"></canvas>
-    </div>
-    <button class="dl-btn" onclick="dlLoad()">↓ Download this country (CSV)</button>
-    <button class="dl-btn" onclick="dlLoadAll()">↓ Download all countries (CSV)</button>
+    <div class="metrics" id="load-metrics"></div>
+    <div class="chart-wrap"><canvas id="load-chart"></canvas></div>
+    <hr class="divider">
+    <button class="dl-btn" onclick="dlLoad(false)">⬇ Download this country (CSV)</button>
+    <button class="dl-btn" onclick="dlLoad(true)">⬇ Download all countries (CSV)</button>
   </div>
 
   <!-- SOLAR PAGE -->
-  <div class="page" id="page-solar">
-    <h2>Solar Generation Profiles <span class="badge">174 Countries</span></h2>
-    <p class="page-sub">PVWatts V8 clear-sky AC output · 4 kW DC system · equator-facing</p>
+  <div id="page-solar" class="page">
+    <h2>Solar Generation Profiles</h2>
+    <p class="sub">PVWatts-equivalent AC output — 4 kW DC system, clear-sky model</p>
     <div class="controls">
-      <div class="field">
-        <label>Country</label>
-        <select id="solar-country"></select>
-      </div>
-      <div class="field">
-        <label>Time Period</label>
-        <select id="solar-period"></select>
-      </div>
+      <div><label>Country</label><select id="solar-country" onchange="renderSolar()"></select></div>
+      <div><label>Time Period</label><select id="solar-period" onchange="renderSolar()"></select></div>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="stat-label">Daily Energy</div><div class="stat-val" id="ss-energy">—</div><div class="stat-sub">kWh</div></div>
-      <div class="stat"><div class="stat-label">Peak Output</div><div class="stat-val" id="ss-peak">—</div><div class="stat-sub">Watts</div></div>
-      <div class="stat"><div class="stat-label">Peak Hour</div><div class="stat-val" id="ss-hour">—</div></div>
-      <div class="stat"><div class="stat-label">Daylight Hours</div><div class="stat-val" id="ss-daylight">—</div></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">AC Power Output (W)</div>
-      <canvas id="solar-chart" height="260"></canvas>
-    </div>
-    <button class="dl-btn" onclick="dlSolar()">↓ Download this profile (CSV)</button>
-    <button class="dl-btn" onclick="dlSolarAll()">↓ Download all 16 periods (CSV)</button>
-    <button class="dl-btn" onclick="dlSolarAllCountries()">↓ Download all countries (CSV)</button>
+    <div class="metrics" id="solar-metrics"></div>
+    <div class="chart-wrap"><canvas id="solar-chart"></canvas></div>
+    <hr class="divider">
+    <button class="dl-btn" onclick="dlSolar(0)">⬇ This country + period (CSV)</button>
+    <button class="dl-btn" onclick="dlSolar(1)">⬇ All 16 periods for this country (CSV)</button>
+    <button class="dl-btn" onclick="dlSolar(2)">⬇ All countries this period (CSV)</button>
   </div>
 
   <!-- COMPARE PAGE -->
-  <div class="page" id="page-compare">
-    <h2>Compare Countries</h2>
-    <p class="page-sub">Normalized solar profiles (0–1 scale) — shape and timing compared directly</p>
+  <div id="page-compare" class="page">
+    <h2>Compare Solar Profiles</h2>
+    <p class="sub">Normalized 0–1 scale — compare generation shape regardless of absolute output</p>
     <div class="controls">
-      <div class="field">
-        <label>Time Period</label>
-        <select id="cmp-period"></select>
-      </div>
+      <div><label>Country A</label><select id="cmp-a" onchange="renderCmp()"></select></div>
+      <div><label>Country B</label><select id="cmp-b" onchange="renderCmp()"></select></div>
+      <div><label>Time Period</label><select id="cmp-period" onchange="renderCmp()"></select></div>
     </div>
-    <div class="controls">
-      <div class="field">
-        <label>Country A</label>
-        <select id="cmp-a"></select>
-      </div>
-      <div class="field">
-        <label>Country B</label>
-        <select id="cmp-b"></select>
-      </div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Normalized Solar Output (0 = none · 1 = peak)</div>
-      <canvas id="cmp-chart" height="260"></canvas>
-    </div>
-    <div class="stats" style="grid-template-columns:1fr 1fr">
-      <div class="stat"><div class="stat-label" id="cmp-la">Country A</div><div class="stat-val" id="cmp-ea">—</div><div class="stat-sub" id="cmp-pa">—</div></div>
-      <div class="stat"><div class="stat-label" id="cmp-lb">Country B</div><div class="stat-val" id="cmp-eb">—</div><div class="stat-sub" id="cmp-pb">—</div></div>
-    </div>
-    <button class="dl-btn" onclick="dlCompare()">↓ Download comparison CSV</button>
+    <div class="metrics" id="cmp-metrics"></div>
+    <div class="chart-wrap"><canvas id="cmp-chart"></canvas></div>
+    <hr class="divider">
+    <button class="dl-btn" onclick="dlCmp()">⬇ Download comparison (CSV)</button>
   </div>
 
-</div>
+</main>
 
-<div id="tooltip"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const HOURS = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
-
+const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00');
 const PERIODS = {
   "Winter (Jan 1)":"Winter_Jan1","Spring (Apr 1)":"Spring_Apr1",
   "Summer (Jul 1)":"Summer_Jul1","Autumn (Oct 1)":"Autumn_Oct1",
@@ -256,281 +164,208 @@ const PERIODS = {
   "May 1":"May1","June 1":"Jun1","July 1":"Jul1","August 1":"Aug1",
   "September 1":"Sep1","October 1":"Oct1","November 1":"Nov1","December 1":"Dec1"
 };
+const PERIOD_KEYS = Object.keys(PERIODS);
 
-let loadData=[], solarData=[];
+let loadData={}, solarData={};
 let loadChart=null, solarChart=null, cmpChart=null;
 
-// Chart.js global defaults
-Chart.defaults.font.family="'Inter',sans-serif";
-Chart.defaults.color="#7a9cbf";
+// ── DATA LOAD ────────────────────────────────────────────────────────────────
+Promise.all([
+  fetchCSV('data/load_profiles.csv'),
+  fetchCSV('data/solar_seasonal_profiles.csv')
+]).then(([ld, sd])=>{
+  // parse load
+  function cleanRow(r){const o={};Object.keys(r).forEach(k=>{const nk=k.replace(/\s+/g,' ').trim();o[nk]=typeof r[k]==='string'?r[k].trim():r[k];});return o;}
+  ld.forEach(r=>{const c=cleanRow(r);const n=c.Country||c['Country ']||c[' Country'];if(!n)return;loadData[n.trim()]=c;});
+  sd.forEach(r=>{const c=cleanRow(r);const n=c.Country||c['Country ']||c[' Country'];if(!n)return;solarData[n.trim()]=c;});
 
-function mkTooltip(chart, labels, datasets){
-  const tip=document.getElementById('tooltip');
-  const canvas=chart.canvas;
-  canvas.addEventListener('mousemove',e=>{
-    const rect=canvas.getBoundingClientRect();
-    const x=e.clientX-rect.left;
-    const pts=chart.getElementsAtEventForMode(e,'index',{intersect:false},false);
-    if(!pts.length){tip.style.opacity=0;return}
-    const idx=pts[0].index;
-    let html=`<strong>${labels[idx]}</strong>`;
-    datasets.forEach(d=>{ html+=`<div style="color:${d.color}">${d.name}: ${d.fmt(d.data[idx])}</div>`; });
-    tip.innerHTML=html;
-    tip.style.opacity=1;
-    let lx=e.clientX+14, ly=e.clientY-10;
-    if(lx+190>window.innerWidth) lx=e.clientX-200;
-    tip.style.left=lx+'px'; tip.style.top=ly+'px';
+  console.log('Load keys sample:', Object.keys(ld[0]||{}));
+  console.log('Load countries found:', Object.keys(loadData).length);
+  console.log('Solar countries found:', Object.keys(solarData).length);
+  const lCountries = Object.keys(loadData).sort();
+  const sCountries = Object.keys(solarData).sort();
+
+  populate('load-country', lCountries);
+  populate('solar-country', sCountries);
+  populate('cmp-a', sCountries);
+  populate('cmp-b', sCountries, 1);
+  PERIOD_KEYS.forEach(k=>{
+    ['solar-period','cmp-period'].forEach(id=>{
+      const o=document.createElement('option');o.value=k;o.textContent=k;
+      document.getElementById(id).appendChild(o);
+    });
   });
-  canvas.addEventListener('mouseleave',()=>{tip.style.opacity=0});
+
+  renderLoad(); renderSolar(); renderCmp();
+  document.getElementById('loading').style.display='none';
+}).catch(e=>{
+  document.getElementById('err').style.display='block';
+  document.getElementById('err').textContent='Error loading data: '+e.message+
+    '. Make sure the data/ folder is in the same directory as index.html.';
+  document.querySelector('#loading .spinner').style.display='none';
+});
+
+function fetchCSV(url){
+  return new Promise((res,rej)=>
+    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,
+      complete:r=>res(r.data), error:e=>rej(e)})
+  );
+}
+function populate(id, arr, defIdx=0){
+  const sel=document.getElementById(id);
+  arr.forEach((v,i)=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
+  sel.selectedIndex=defIdx;
 }
 
-function populate(sel, items){ sel.innerHTML=items.map(v=>`<option>${v}</option>`).join(''); }
-
-// ── LOAD TAB ──────────────────────────────────────────────────────────────────
-function renderLoad(){
-  const country=document.getElementById('load-country').value;
-  const row=loadData.find(r=>r.Country===country); if(!row) return;
-  const profile=HOURS.map((_,h)=>+row[`Hour ${h}`]);
-  const pkH=profile.indexOf(Math.max(...profile));
-  const trH=profile.indexOf(Math.min(...profile));
-  document.getElementById('ls-climate').textContent=(row.Climate||'—').trim();
-  document.getElementById('ls-peak').textContent=HOURS[pkH];
-  document.getElementById('ls-peak-sub').textContent=profile[pkH].toFixed(2)+'x avg';
-  document.getElementById('ls-trough').textContent=HOURS[trH];
-  document.getElementById('ls-trough-sub').textContent=profile[trH].toFixed(2)+'x avg';
-  document.getElementById('ls-pop').textContent=(+row.Population/1e6).toFixed(1)+'M';
-
-  const ctx=document.getElementById('load-chart').getContext('2d');
-  if(loadChart) loadChart.destroy();
-  loadChart=new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:HOURS,
-      datasets:[{
-        data:profile,
-        borderColor:'#4eb3e8',borderWidth:2,
-        backgroundColor:'rgba(78,179,232,0.08)',fill:true,
-        pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#4eb3e8',tension:0.35
-      },{
-        data:Array(24).fill(1),
-        borderColor:'rgba(255,255,255,0.15)',borderWidth:1,
-        borderDash:[4,4],pointRadius:0,fill:false
-      }]
-    },
-    options:{
-      responsive:true,animation:false,plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
-        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},
-           title:{display:true,text:'Load Factor (x avg)',color:'#7a9cbf',font:{size:11}}}
-      }
-    }
-  });
-  mkTooltip(loadChart,HOURS,[{name:country,color:'#4eb3e8',data:profile,fmt:v=>v.toFixed(3)+'x'}]);
-}
-
-function dlLoad(){
-  const country=document.getElementById('load-country').value;
-  const row=loadData.find(r=>r.Country===country); if(!row) return;
-  const profile=HOURS.map((_,h)=>+row[`Hour ${h}`]);
-  let csv='Hour,Load_Factor\n'+HOURS.map((h,i)=>`${h},${profile[i].toFixed(6)}`).join('\n');
-  dlCSV(csv, country.replace(/ /g,'_')+'_load_profile.csv');
-}
-function dlLoadAll(){
-  const header=['Country','Climate','Population','GDP',...HOURS].join(',');
-  const rows=loadData.map(r=>[r.Country,(r.Climate||'').trim(),r.Population,r.GDP,...HOURS.map((_,h)=>(+r[`Hour ${h}`]).toFixed(6))].join(','));
-  dlCSV(header+'\n'+rows.join('\n'),'all_countries_load_profiles.csv');
-}
-
-// ── SOLAR TAB ─────────────────────────────────────────────────────────────────
-function renderSolar(){
-  const country=document.getElementById('solar-country').value;
-  const period=document.getElementById('solar-period').value;
-  const key=PERIODS[period]; if(!key) return;
-  const row=solarData.find(r=>r.Country===country); if(!row) return;
-  const profile=HOURS.map((_,h)=>+row[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  const total=profile.reduce((a,b)=>a+b,0);
-  const pk=Math.max(...profile);
-  const pkH=profile.indexOf(pk);
-  const daylight=profile.filter(v=>v>0).length;
-  document.getElementById('ss-energy').textContent=(total/1000).toFixed(2);
-  document.getElementById('ss-peak').textContent=pk.toFixed(0);
-  document.getElementById('ss-hour').textContent=HOURS[pkH];
-  document.getElementById('ss-daylight').textContent=daylight+' h';
-
-  const colors=profile.map(v=>{
-    const t=pk>0?v/pk:0;
-    if(t<0.3) return 'rgba(0,48,87,0.6)';
-    if(t<0.6) return '#B3A369';
-    return '#d4c47a';
-  });
-  const ctx=document.getElementById('solar-chart').getContext('2d');
-  if(solarChart) solarChart.destroy();
-  solarChart=new Chart(ctx,{
-    type:'bar',
-    data:{labels:HOURS,datasets:[{data:profile,backgroundColor:colors,borderRadius:3,borderSkipped:'bottom'}]},
-    options:{
-      responsive:true,animation:false,plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
-        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},
-           title:{display:true,text:'AC Power (W)',color:'#7a9cbf',font:{size:11}}}
-      }
-    }
-  });
-  mkTooltip(solarChart,HOURS,[{name:'AC Power',color:'#B3A369',data:profile,fmt:v=>v.toFixed(1)+' W'}]);
-}
-
-function dlSolar(){
-  const country=document.getElementById('solar-country').value;
-  const period=document.getElementById('solar-period').value;
-  const key=PERIODS[period];
-  const row=solarData.find(r=>r.Country===country); if(!row) return;
-  const profile=HOURS.map((_,h)=>+row[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  let csv='Hour,AC_Power_W\n'+HOURS.map((h,i)=>`${h},${profile[i].toFixed(2)}`).join('\n');
-  dlCSV(csv,country.replace(/ /g,'_')+'_'+key+'_solar.csv');
-}
-function dlSolarAll(){
-  const country=document.getElementById('solar-country').value;
-  const row=solarData.find(r=>r.Country===country); if(!row) return;
-  const header='Hour,'+Object.keys(PERIODS).join(',');
-  const rows=HOURS.map((h,i)=>{
-    const vals=Object.values(PERIODS).map(k=>(+row[`${k}_Hour_${String(i).padStart(2,'0')}_W`]).toFixed(2));
-    return `${h},${vals.join(',')}`;
-  });
-  dlCSV(header+'\n'+rows.join('\n'),country.replace(/ /g,'_')+'_all_periods.csv');
-}
-function dlSolarAllCountries(){
-  const period=document.getElementById('solar-period').value;
-  const key=PERIODS[period];
-  const header='Country,Latitude,Longitude,Daily_kWh,'+HOURS.map(h=>`${key}_${h}_W`).join(',');
-  const rows=solarData.map(r=>{
-    const profile=HOURS.map((_,h)=>+r[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-    const kwh=(profile.reduce((a,b)=>a+b,0)/1000).toFixed(2);
-    return [r.Country,r.Latitude,r.Longitude,kwh,...profile.map(v=>v.toFixed(2))].join(',');
-  });
-  dlCSV(header+'\n'+rows.join('\n'),'all_countries_'+key+'.csv');
-}
-
-// ── COMPARE TAB ───────────────────────────────────────────────────────────────
-function renderCompare(){
-  const period=document.getElementById('cmp-period').value;
-  const key=PERIODS[period];
-  const cA=document.getElementById('cmp-a').value;
-  const cB=document.getElementById('cmp-b').value;
-  const rowA=solarData.find(r=>r.Country===cA);
-  const rowB=solarData.find(r=>r.Country===cB);
-  if(!rowA||!rowB||!key) return;
-  const hA=HOURS.map((_,h)=>+rowA[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  const hB=HOURS.map((_,h)=>+rowB[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  const pkA=Math.max(...hA)||1, pkB=Math.max(...hB)||1;
-  const nA=hA.map(v=>v/pkA), nB=hB.map(v=>v/pkB);
-
-  document.getElementById('cmp-la').textContent=cA;
-  document.getElementById('cmp-lb').textContent=cB;
-  document.getElementById('cmp-ea').textContent=(hA.reduce((a,b)=>a+b,0)/1000).toFixed(2)+' kWh';
-  document.getElementById('cmp-eb').textContent=(hB.reduce((a,b)=>a+b,0)/1000).toFixed(2)+' kWh';
-  document.getElementById('cmp-pa').textContent='Peak: '+pkA.toFixed(0)+' W';
-  document.getElementById('cmp-pb').textContent='Peak: '+pkB.toFixed(0)+' W';
-
-  const ctx=document.getElementById('cmp-chart').getContext('2d');
-  if(cmpChart) cmpChart.destroy();
-  cmpChart=new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:HOURS,
-      datasets:[
-        {label:cA,data:nA,borderColor:'#B3A369',borderWidth:2.5,
-         backgroundColor:'rgba(179,163,105,0.08)',fill:true,pointRadius:0,tension:0.35},
-        {label:cB,data:nB,borderColor:'#4eb3e8',borderWidth:2.5,
-         backgroundColor:'rgba(78,179,232,0.08)',fill:true,pointRadius:0,tension:0.35}
-      ]
-    },
-    options:{
-      responsive:true,animation:false,
-      plugins:{legend:{display:true,labels:{color:'#e8edf5',font:{size:12},boxWidth:12,padding:16}}},
-      scales:{
-        x:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{maxTicksLimit:8,color:'#7a9cbf',font:{size:11}}},
-        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a9cbf',font:{size:11}},min:0,max:1,
-           title:{display:true,text:'Normalized Output (0–1)',color:'#7a9cbf',font:{size:11}}}
-      }
-    }
-  });
-  mkTooltip(cmpChart,HOURS,[
-    {name:cA,color:'#B3A369',data:nA,fmt:v=>v.toFixed(3)},
-    {name:cB,color:'#4eb3e8',data:nB,fmt:v=>v.toFixed(3)}
-  ]);
-}
-
-function dlCompare(){
-  const period=document.getElementById('cmp-period').value;
-  const key=PERIODS[period];
-  const cA=document.getElementById('cmp-a').value, cB=document.getElementById('cmp-b').value;
-  const rowA=solarData.find(r=>r.Country===cA), rowB=solarData.find(r=>r.Country===cB);
-  if(!rowA||!rowB) return;
-  const hA=HOURS.map((_,h)=>+rowA[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  const hB=HOURS.map((_,h)=>+rowB[`${key}_Hour_${String(h).padStart(2,'0')}_W`]);
-  const pkA=Math.max(...hA)||1, pkB=Math.max(...hB)||1;
-  const header=`Hour,${cA}_W,${cB}_W,${cA}_norm,${cB}_norm`;
-  const rows=HOURS.map((h,i)=>`${h},${hA[i].toFixed(2)},${hB[i].toFixed(2)},${(hA[i]/pkA).toFixed(4)},${(hB[i]/pkB).toFixed(4)}`);
-  dlCSV(header+'\n'+rows.join('\n'),cA.replace(/ /g,'_')+'_vs_'+cB.replace(/ /g,'_')+'_'+key+'.csv');
-}
-
-// ── NAV ───────────────────────────────────────────────────────────────────────
-function nav(id){
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function nav(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  const btns=[...document.querySelectorAll('.sb-nav button')];
-  const map={load:0,solar:1,compare:2};
-  btns[map[id]].classList.add('active');
+  document.getElementById('page-'+page).classList.add('active');
+  const idx={'load':0,'solar':1,'compare':2}[page];
+  document.querySelectorAll('.sb-nav button')[idx].classList.add('active');
 }
 
-// ── CSV DOWNLOAD ──────────────────────────────────────────────────────────────
-function dlCSV(csv,fname){
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=fname;document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
+// ── METRICS HELPER ───────────────────────────────────────────────────────────
+function metrics(id, items){
+  document.getElementById(id).innerHTML=items.map(([l,v,s])=>
+    `<div class="metric"><div class="m-label">${l}</div><div class="m-val">${v}</div>${s?`<div class="m-sub">${s}</div>`:''}</div>`
+  ).join('');
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-async function init(){
-  // Load both CSVs
-  const [loadRes, solarRes] = await Promise.all([
-    new Promise(res=>Papa.parse('data/load_profiles.csv',{download:true,header:true,skipEmptyLines:true,complete:r=>res(r.data)})),
-    new Promise(res=>Papa.parse('data/solar_seasonal_profiles.csv',{download:true,header:true,skipEmptyLines:true,complete:r=>res(r.data)}))
+// ── LOAD PAGE ────────────────────────────────────────────────────────────────
+function renderLoad(){
+  const c=document.getElementById('load-country').value;
+  const r=loadData[c]; if(!r)return;
+  const vals=Array.from({length:24},(_,h)=>parseFloat(r[`Hour ${h}`]??r[`Hour ${h} `]??0));
+  const peak=vals.indexOf(Math.max(...vals)), trough=vals.indexOf(Math.min(...vals));
+  metrics('load-metrics',[
+    ['Climate', r.Climate?.trim()||'—'],
+    ['Peak Hour', HOURS[peak], (Math.max(...vals)).toFixed(2)+'× avg'],
+    ['Trough Hour', HOURS[trough], (Math.min(...vals)).toFixed(2)+'× avg'],
+    ['Population', ((parseFloat(r.Population)||0)/1e6).toFixed(1)+'M'],
   ]);
-  loadData=loadRes.map(r=>({...r,Country:(r.Country||'').trim()})).filter(r=>r.Country);
-  solarData=solarRes.map(r=>({...r,Country:(r.Country||'').trim()})).filter(r=>r.Country);
-
-  // Populate selects
-  const loadCountries=loadData.map(r=>r.Country).sort();
-  const solarCountries=solarData.map(r=>r.Country).sort();
-  const periods=Object.keys(PERIODS);
-
-  populate(document.getElementById('load-country'), loadCountries);
-  populate(document.getElementById('solar-country'), solarCountries);
-  populate(document.getElementById('solar-period'), periods);
-  populate(document.getElementById('cmp-period'), periods);
-  populate(document.getElementById('cmp-a'), solarCountries);
-  const selB=document.getElementById('cmp-b');
-  populate(selB, solarCountries);
-  selB.selectedIndex=1;
-
-  // Wire up change events
-  document.getElementById('load-country').addEventListener('change', renderLoad);
-  document.getElementById('solar-country').addEventListener('change', renderSolar);
-  document.getElementById('solar-period').addEventListener('change', renderSolar);
-  document.getElementById('cmp-period').addEventListener('change', renderCompare);
-  document.getElementById('cmp-a').addEventListener('change', renderCompare);
-  document.getElementById('cmp-b').addEventListener('change', renderCompare);
-
-  renderLoad();
-  renderSolar();
-  renderCompare();
+  drawLine('load-chart',loadChart,c=>loadChart=c, HOURS, [{
+    label:c, data:vals,
+    borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',
+    borderWidth:2.5,pointRadius:3,fill:true,tension:0.3
+  }],'Load Factor (× daily avg)', [{value:1,borderColor:'rgba(255,255,255,0.2)',borderDash:[4,4],label:{display:true,content:'Average',color:'rgba(255,255,255,0.4)'}}]);
 }
 
-init();
+// ── SOLAR PAGE ───────────────────────────────────────────────────────────────
+function renderSolar(){
+  const c=document.getElementById('solar-country').value;
+  const pk=PERIODS[document.getElementById('solar-period').value];
+  const r=solarData[c]; if(!r)return;
+  const vals=Array.from({length:24},(_,h)=>parseFloat(r[`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const peak=Math.max(...vals), peakH=vals.indexOf(peak), daylight=vals.filter(v=>v>0).length;
+  metrics('solar-metrics',[
+    ['Daily Energy', (vals.reduce((a,b)=>a+b,0)/1000).toFixed(1)+' kWh'],
+    ['Peak Output', peak.toFixed(0)+' W'],
+    ['Peak Hour', HOURS[peakH]],
+    ['Daylight Hours', daylight+' h'],
+  ]);
+  // bar with gold gradient
+  const colors=vals.map(v=>peak>0?`rgba(${lerp(0,253,v/peak)},${lerp(36,224,v/peak)},${lerp(0,107,v/peak)},0.85)`:'rgba(0,0,0,0)');
+  if(solarChart){solarChart.destroy();solarChart=null;}
+  solarChart=new Chart(document.getElementById('solar-chart').getContext('2d'),{
+    type:'bar',
+    data:{labels:HOURS,datasets:[{label:`${c} · ${document.getElementById('solar-period').value}`,data:vals,backgroundColor:colors,borderRadius:3}]},
+    options:chartOpts('AC Power Output (W)')
+  });
+}
+function lerp(a,b,t){return Math.round(a+(b-a)*t)}
+
+// ── COMPARE PAGE ─────────────────────────────────────────────────────────────
+function renderCmp(){
+  const ca=document.getElementById('cmp-a').value;
+  const cb=document.getElementById('cmp-b').value;
+  const pk=PERIODS[document.getElementById('cmp-period').value];
+  const ra=solarData[ca], rb=solarData[cb]; if(!ra||!rb)return;
+  const ha=Array.from({length:24},(_,h)=>parseFloat(ra[`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const hb=Array.from({length:24},(_,h)=>parseFloat(rb[`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const pa=Math.max(...ha)||1, pb=Math.max(...hb)||1;
+  const na=ha.map(v=>+(v/pa).toFixed(4)), nb=hb.map(v=>+(v/pb).toFixed(4));
+  metrics('cmp-metrics',[
+    [ca+' Daily Energy', (ha.reduce((a,b)=>a+b,0)/1000).toFixed(1)+' kWh', 'Peak: '+pa.toFixed(0)+' W'],
+    [cb+' Daily Energy', (hb.reduce((a,b)=>a+b,0)/1000).toFixed(1)+' kWh', 'Peak: '+pb.toFixed(0)+' W'],
+  ]);
+  drawLine('cmp-chart',cmpChart,c=>cmpChart=c, HOURS,[
+    {label:`${ca} (peak ${pa.toFixed(0)} W)`,data:na,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
+    {label:`${cb} (peak ${pb.toFixed(0)} W)`,data:nb,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
+  ],'Normalized Output (0 = none, 1 = peak)',[]);
+}
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+const DARK='#001626';
+function chartOpts(yLabel){
+  return{responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#dde6f0',font:{family:"'Space Grotesk'",size:12}}}},
+    scales:{
+      x:{grid:{color:'#0a3a6a'},ticks:{color:'#6a90b8',font:{size:11}},title:{display:true,text:'Hour (local time)',color:'#6a90b8'}},
+      y:{grid:{color:'#0a3a6a'},ticks:{color:'#6a90b8',font:{size:11}},title:{display:true,text:yLabel,color:'#6a90b8'}}
+    }
+  };
+}
+function drawLine(canvasId, existing, setter, labels, datasets, yLabel, annotations){
+  if(existing){existing.destroy();}
+  setter(new Chart(document.getElementById(canvasId).getContext('2d'),{
+    type:'line',
+    data:{labels,datasets},
+    options:chartOpts(yLabel)
+  }));
+}
+
+// ── DOWNLOADS ─────────────────────────────────────────────────────────────────
+function dlCSV(rows, filename){
+  const csv=Papa.unparse(rows);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=filename;a.click();
+}
+function dlLoad(all){
+  if(!all){
+    const c=document.getElementById('load-country').value;
+    const r=loadData[c];
+    dlCSV(HOURS.map((h,i)=>({Hour:h,Load_Factor:parseFloat(r[`Hour ${i}`]||0).toFixed(6)})),
+      c.replace(/ /g,'_')+'_load_profile.csv');
+  } else {
+    const rows=Object.entries(loadData).map(([c,r])=>{
+      const obj={Country:c,Climate:r.Climate?.trim()||'',Population:r.Population,GDP:r.GDP};
+      HOURS.forEach((h,i)=>obj[h]=parseFloat(r[`Hour ${i}`]||0).toFixed(6));
+      return obj;
+    });
+    dlCSV(rows,'all_countries_load_profiles.csv');
+  }
+}
+function dlSolar(mode){
+  const c=document.getElementById('solar-country').value;
+  const pk=PERIODS[document.getElementById('solar-period').value];
+  const r=solarData[c];
+  if(mode===0){
+    dlCSV(HOURS.map((h,i)=>({Hour:h,AC_Power_W:parseFloat(r[`${pk}_Hour_${String(i).padStart(2,'0')}_W`]||0).toFixed(2)})),
+      c.replace(/ /g,'_')+'_'+pk+'_solar.csv');
+  } else if(mode===1){
+    const rows=HOURS.map((h,i)=>{const obj={Hour:h};PERIOD_KEYS.forEach(pl=>{const key=PERIODS[pl];obj[pl]=parseFloat(r[`${key}_Hour_${String(i).padStart(2,'0')}_W`]||0).toFixed(2);});return obj;});
+    dlCSV(rows,c.replace(/ /g,'_')+'_all_periods_solar.csv');
+  } else {
+    const rows=Object.entries(solarData).map(([cn,ro])=>{
+      const obj={Country:cn,Latitude:ro.Latitude,Longitude:ro.Longitude,Period:document.getElementById('solar-period').value};
+      HOURS.forEach((h,i)=>obj[h+'_W']=parseFloat(ro[`${pk}_Hour_${String(i).padStart(2,'0')}_W`]||0).toFixed(2));
+      return obj;
+    });
+    dlCSV(rows,'all_countries_'+pk+'_solar.csv');
+  }
+}
+function dlCmp(){
+  const ca=document.getElementById('cmp-a').value, cb=document.getElementById('cmp-b').value;
+  const pk=PERIODS[document.getElementById('cmp-period').value];
+  const ha=Array.from({length:24},(_,h)=>parseFloat(solarData[ca][`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const hb=Array.from({length:24},(_,h)=>parseFloat(solarData[cb][`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const pa=Math.max(...ha)||1, pb=Math.max(...hb)||1;
+  dlCSV(HOURS.map((h,i)=>({Hour:h,[ca+'_W']:ha[i].toFixed(2),[cb+'_W']:hb[i].toFixed(2),[ca+'_norm']:(ha[i]/pa).toFixed(4),[cb+'_norm']:(hb[i]/pb).toFixed(4)})),
+    ca.replace(/ /g,'_')+'_vs_'+cb.replace(/ /g,'_')+'_'+pk+'.csv');
+}
 </script>
+</body>
+</html>
