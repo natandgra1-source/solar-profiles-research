@@ -97,6 +97,7 @@ canvas{max-height:340px}
     <button class="active" onclick="nav('load')"><span class="icon">⚡</span>Load Profiles</button>
     <button onclick="nav('solar')"><span class="icon">☀️</span>Solar Profiles</button>
     <button onclick="nav('compare')"><span class="icon">📊</span>Compare Countries</button>
+    <button onclick="nav('cities')"><span class="icon">🏙️</span>City Comparison</button>
   </div>
   <div class="sb-foot">
     Solar: PVWatts V8 (pvlib)<br>
@@ -153,6 +154,24 @@ canvas{max-height:340px}
     <button class="dl-btn" onclick="dlCmp()">⬇ Download comparison (CSV)</button>
   </div>
 
+  <!-- CITIES PAGE -->
+  <div id="page-cities" class="page">
+    <h2>City Solar Comparison</h2>
+    <p class="sub">Compare solar generation between any two cities worldwide — normalized 0–1 scale</p>
+    <div class="controls">
+      <div><label>Country</label><select id="city-country" onchange="updateCities()"></select></div>
+      <div><label>Time Period</label><select id="city-period" onchange="renderCities()"></select></div>
+    </div>
+    <div class="controls">
+      <div><label>City A</label><select id="city-a" onchange="renderCities()"></select></div>
+      <div><label>City B</label><select id="city-b" onchange="renderCities()"></select></div>
+    </div>
+    <div class="metrics" id="city-metrics"></div>
+    <div class="chart-wrap"><canvas id="city-chart"></canvas></div>
+    <hr class="divider">
+    <button class="dl-btn" onclick="dlCities()">⬇ Download comparison (CSV)</button>
+  </div>
+
 </main>
 
 <script>
@@ -166,18 +185,20 @@ const PERIODS = {
 };
 const PERIOD_KEYS = Object.keys(PERIODS);
 
-let loadData={}, solarData={};
+let loadData={}, solarData={}, cityData={}; // cityData[country][city]=row
 let loadChart=null, solarChart=null, cmpChart=null;
 
 // ── DATA LOAD ────────────────────────────────────────────────────────────────
 Promise.all([
   fetchCSV('data/load_profiles.csv'),
-  fetchCSV('data/solar_seasonal_profiles.csv')
-]).then(([ld, sd])=>{
+  fetchCSV('data/solar_seasonal_profiles.csv'),
+  fetchCSV('data/city_solar_profiles.csv')
+]).then(([ld, sd, cd])=>{
   // parse load
   function cleanRow(r){const o={};Object.keys(r).forEach(k=>{const nk=k.replace(/\s+/g,' ').trim();o[nk]=typeof r[k]==='string'?r[k].trim():r[k];});return o;}
   ld.forEach(r=>{const c=cleanRow(r);const n=c.Country||c['Country ']||c[' Country'];if(!n)return;loadData[n.trim()]=c;});
   sd.forEach(r=>{const c=cleanRow(r);const n=c.Country||c['Country ']||c[' Country'];if(!n)return;solarData[n.trim()]=c;});
+  cd.forEach(r=>{const c=cleanRow(r);const country=c.Country;const city=c.City;if(!country||!city)return;if(!cityData[country])cityData[country]={};cityData[country][city]=c;});
 
   console.log('Load keys sample:', Object.keys(ld[0]||{}));
   console.log('Load countries found:', Object.keys(loadData).length);
@@ -196,6 +217,13 @@ Promise.all([
     });
   });
 
+  const cityCountries = Object.keys(cityData).sort();
+  populate('city-country', cityCountries, 0);
+  PERIOD_KEYS.forEach(k=>{
+    const o=document.createElement('option');o.value=k;o.textContent=k;
+    document.getElementById('city-period').appendChild(o);
+  });
+  updateCities();
   renderLoad(); renderSolar(); renderCmp();
   document.getElementById('loading').style.display='none';
 }).catch(e=>{
@@ -222,7 +250,7 @@ function nav(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const idx={'load':0,'solar':1,'compare':2}[page];
+  const idx={'load':0,'solar':1,'compare':2,'cities':3}[page];
   document.querySelectorAll('.sb-nav button')[idx].classList.add('active');
 }
 
@@ -294,6 +322,57 @@ function renderCmp(){
     {label:`${ca} (peak ${pa.toFixed(0)} W)`,data:na,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
     {label:`${cb} (peak ${pb.toFixed(0)} W)`,data:nb,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
   ],'Normalized Output (0 = none, 1 = peak)',[]);
+}
+
+// ── CITIES PAGE ───────────────────────────────────────────────────────────────
+function updateCities(){
+  const country=document.getElementById('city-country').value;
+  const cities=Object.keys(cityData[country]||{}).sort();
+  ['city-a','city-b'].forEach((id,i)=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML='';
+    cities.forEach((c,j)=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+    sel.selectedIndex=Math.min(i,cities.length-1);
+  });
+  renderCities();
+}
+function renderCities(){
+  const country=document.getElementById('city-country').value;
+  const ca=document.getElementById('city-a').value;
+  const cb=document.getElementById('city-b').value;
+  const pk=PERIODS[document.getElementById('city-period').value];
+  const cities=cityData[country]||{};
+  const ra=cities[ca], rb=cities[cb]; if(!ra||!rb)return;
+  const ha=Array.from({length:24},(_,h)=>parseFloat(ra[`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const hb=Array.from({length:24},(_,h)=>parseFloat(rb[`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const pa=Math.max(...ha)||1, pb=Math.max(...hb)||1;
+  const na=ha.map(v=>+(v/pa).toFixed(4)), nb=hb.map(v=>+(v/pb).toFixed(4));
+  metrics('city-metrics',[
+    [ca+' Daily Energy',(ha.reduce((a,b)=>a+b,0)/1000).toFixed(1)+' kWh','Peak: '+pa.toFixed(0)+' W'],
+    [cb+' Daily Energy',(hb.reduce((a,b)=>a+b,0)/1000).toFixed(1)+' kWh','Peak: '+pb.toFixed(0)+' W'],
+    [ca+' Lat/Lon', ra.Latitude+'°, '+ra.Longitude+'°'],
+    [cb+' Lat/Lon', rb.Latitude+'°, '+rb.Longitude+'°'],
+  ]);
+  if(window._cityChart){window._cityChart.destroy();}
+  window._cityChart=new Chart(document.getElementById('city-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:HOURS,datasets:[
+      {label:`${ca} (peak ${pa.toFixed(0)} W)`,data:na,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
+      {label:`${cb} (peak ${pb.toFixed(0)} W)`,data:nb,borderColor:'#34d399',backgroundColor:'rgba(52,211,153,0.08)',borderWidth:2.5,pointRadius:0,fill:true,tension:0.3},
+    ]},
+    options:chartOpts('Normalized Output (0 = none, 1 = peak)')
+  });
+}
+function dlCities(){
+  const country=document.getElementById('city-country').value;
+  const ca=document.getElementById('city-a').value, cb=document.getElementById('city-b').value;
+  const pk=PERIODS[document.getElementById('city-period').value];
+  const cities=cityData[country]||{};
+  const ha=Array.from({length:24},(_,h)=>parseFloat(cities[ca][`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const hb=Array.from({length:24},(_,h)=>parseFloat(cities[cb][`${pk}_Hour_${String(h).padStart(2,'0')}_W`]||0));
+  const pa=Math.max(...ha)||1, pb=Math.max(...hb)||1;
+  dlCSV(HOURS.map((h,i)=>({Hour:h,[ca+'_W']:ha[i].toFixed(2),[cb+'_W']:hb[i].toFixed(2),[ca+'_norm']:(ha[i]/pa).toFixed(4),[cb+'_norm']:(hb[i]/pb).toFixed(4)})),
+    country.replace(/ /g,'_')+'_'+ca.replace(/ /g,'_')+'_vs_'+cb.replace(/ /g,'_')+'_'+pk+'.csv');
 }
 
 // ── CHART HELPERS ─────────────────────────────────────────────────────────────
