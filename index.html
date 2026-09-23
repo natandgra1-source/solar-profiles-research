@@ -98,6 +98,7 @@ canvas{max-height:340px}
     <button onclick="nav('solar')"><span class="icon">☀️</span>Solar Profiles</button>
     <button onclick="nav('compare')"><span class="icon">📊</span>Compare Countries</button>
     <button onclick="nav('cities')"><span class="icon">🏙️</span>City Comparison</button>
+    <button onclick="nav('about')"><span class="icon">ℹ️</span>About</button>
   </div>
   <div class="sb-foot">
     Solar: PVWatts V8 (pvlib)<br>
@@ -126,7 +127,7 @@ canvas{max-height:340px}
   <!-- SOLAR PAGE -->
   <div id="page-solar" class="page">
     <h2>Solar Generation Profiles</h2>
-    <p class="sub">PVWatts-equivalent AC output — 4 kW DC system, clear-sky model</p>
+    <p class="sub">PVWatts-equivalent AC output — 4 kW DC system, real 2023 weather (Open-Meteo)</p>
     <div class="controls">
       <div><label>Country</label><select id="solar-country" onchange="renderSolar()"></select></div>
       <div><label>Time Period</label><select id="solar-period" onchange="renderSolar()"></select></div>
@@ -170,6 +171,97 @@ canvas{max-height:340px}
     <div class="chart-wrap"><canvas id="city-chart"></canvas></div>
     <hr class="divider">
     <button class="dl-btn" onclick="dlCities()">⬇ Download comparison (CSV)</button>
+  </div>
+
+  <!-- ABOUT PAGE -->
+  <div id="page-about" class="page">
+    <h2>About This Repository</h2>
+    <p class="sub">Methodology, data sources, and technical details</p>
+
+    <div style="display:flex;flex-direction:column;gap:20px;max-width:720px">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Overview</div>
+        <p style="line-height:1.7;color:var(--text)">This repository is an open-source data resource developed by the <strong style="color:#fff">GOAL Lab at Georgia Institute of Technology</strong>. It provides hourly electricity load profiles and solar generation profiles for 174 countries, intended for use in energy system modeling, grid planning, and electrification research.</p>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Solar Generation Profiles</div>
+        <p style="line-height:1.7;color:var(--text);margin-bottom:12px">Solar profiles are generated using <strong style="color:#fff">pvlib</strong> with real historical weather data from <strong style="color:#fff">Open-Meteo</strong> (2023 archive). Each country uses a representative centroid coordinate.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">System Size</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">4 kW DC</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">DC/AC Ratio</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">1.2</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Panel Tilt</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">|lat|, max 60°</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">System Losses</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">14%</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Cell Temp Model</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">Faiman</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:7px;padding:12px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Temp Coefficient</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#fff">−0.4%/°C</div>
+          </div>
+        </div>
+        <p style="line-height:1.7;color:var(--muted);font-size:12px;margin-top:12px">POA irradiance calculated via <code style="color:var(--gold)">pvlib.irradiance.get_total_irradiance()</code> using GHI, DNI, and DHI from Open-Meteo. Output is AC power in watts, shifted to approximate local solar noon using UTC offset. Profiles are provided for 16 time snapshots: 4 seasonal (Jan 1, Apr 1, Jul 1, Oct 1) and 12 monthly (1st of each month).</p>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Load Profiles</div>
+        <p style="line-height:1.7;color:var(--text)">Hourly electricity demand profiles are normalized so that <strong style="color:#fff">1.0 = daily average demand</strong>, allowing comparison across countries regardless of total consumption. Profiles cover 99 countries and include seasonal snapshots (winter, spring, summer, autumn) representing typical demand shapes. Values above 1.0 indicate peak demand periods; values below 1.0 indicate off-peak periods.</p>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">City Solar Profiles</div>
+        <p style="line-height:1.7;color:var(--text)">Solar generation profiles are also available for 522 cities across 174 countries, enabling sub-national comparison. The same pvlib methodology and Open-Meteo weather data are used, with each city's specific latitude/longitude coordinates.</p>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Data Sources</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="color:var(--gold);font-size:16px;margin-top:1px">☀️</span>
+            <div><strong style="color:#fff">Open-Meteo Archive API</strong><br><span style="color:var(--muted);font-size:12px">Historical hourly solar irradiance (GHI, DNI, DHI), temperature, and wind speed — 2023 full year, UTC. Free and open access, no API key required.</span></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="color:var(--gold);font-size:16px;margin-top:1px">🔬</span>
+            <div><strong style="color:#fff">pvlib (Python)</strong><br><span style="color:var(--muted);font-size:12px">Open-source PV modeling library used for solar position, POA irradiance decomposition, cell temperature, and DC/AC conversion following PVWatts V8 methodology.</span></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="color:var(--gold);font-size:16px;margin-top:1px">⚡</span>
+            <div><strong style="color:#fff">GOAL Lab Load Dataset</strong><br><span style="color:var(--muted);font-size:12px">Country-level normalized hourly electricity demand profiles compiled for energy access and grid modeling research.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Repository</div>
+        <p style="line-height:1.7;color:var(--text)">Source code and CSV data files are openly available on GitHub. The generation scripts (<code style="color:var(--gold)">gen_openmeteo_solar.py</code>) can be re-run to refresh data or extend coverage.</p>
+        <a href="https://github.com/natandgra1-source/solar-profiles-research" target="_blank"
+           style="display:inline-block;margin-top:12px;background:var(--surface2);border:1px solid var(--gold);color:var(--gold);
+                  padding:9px 18px;border-radius:7px;font-size:12.5px;font-weight:600;font-family:'Space Grotesk',sans-serif;text-decoration:none">
+          View on GitHub →
+        </a>
+      </div>
+
+      <div style="background:rgba(179,163,105,.07);border:1px solid rgba(179,163,105,.25);border-radius:10px;padding:18px;font-size:12px;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--gold)">Citation / Contact</strong><br>
+        GOAL Lab · School of Electrical and Computer Engineering · Georgia Institute of Technology<br>
+        Global Optimal Adaptive Learning Lab — focused on energy access, grid modeling, and sustainable electrification.
+      </div>
+
+    </div>
   </div>
 
 </main>
@@ -250,7 +342,7 @@ function nav(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const idx={'load':0,'solar':1,'compare':2,'cities':3}[page];
+  const idx={'load':0,'solar':1,'compare':2,'cities':3,'about':4}[page];
   document.querySelectorAll('.sb-nav button')[idx].classList.add('active');
 }
 
